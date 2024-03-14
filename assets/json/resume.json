@@ -38,10 +38,12 @@
   ],
   "experiences": [
     {
-      "name": "Teaching Assistant for course Linear-Algebra-1",
-      "data": "2023.9-2024.1",
-      "url": "https://github.com/xiaojxkevin/Linear-Algebra-1-fall23",
-      "summary": "Work as the teaching assistant for Prof. Boqing Xue. Mainly work includes marking homeworks and taking discussion classes."
+      "name": "TA for Math Class",
+      "summary": "Work as the teaching assistant for Prof. Boqing Xue. Mainly work includes marking homeworks and taking discussion classes.",
+      "highlights": "Linear Algebra",
+      "startDate": "2023-9",
+      "endDate": "2024-1",
+      "url": "https://github.com/xiaojxkevin/Linear-Algebra-1-fall23"
     }
   ],
   "skills": [
