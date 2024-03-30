@@ -213,10 +213,9 @@ exclude:
   - lighthouse_results/
   - package.json
   - package-lock.json
-  - _pages/about_einstein.md
   - purgecss.config.js
   - README.md
-  - readme_preview/
+  - private/
   - vendor
 keep_files:
   - CNAME
@@ -271,7 +270,7 @@ jekyll-archives:
     year: "/blog/:year/"
     tag: "/blog/tag/:name/"
 
-display_tags: ["slam", "linear algebra", "optimization", "algorithm", "system"] # these tags will be displayed on the front page of your blog
+display_tags: ["slam", "linear algebra", "optimization", "machine learning", "algorithm", "system"] # these tags will be displayed on the front page of your blog
 display_categories: # these categories will be displayed on the front page of your blog
 
 # -----------------------------------------------------------------------------
