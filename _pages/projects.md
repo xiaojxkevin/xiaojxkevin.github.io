@@ -5,7 +5,7 @@ permalink: /projects/
 description: TO EXPLORE
 nav: true
 nav_order: 3
-display_categories: [work, travel]
+display_categories: [Research, Course]
 horizontal: false
 ---
 
