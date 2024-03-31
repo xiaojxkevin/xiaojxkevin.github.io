@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Facial Huamn Age Estimation
+title: Human Age Estimation on Facial Images
 description: Project for Introduction to Machine Learning (CS182) Fall23 ShanghaiTech.
 importance: 2
 category: Course
