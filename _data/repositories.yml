@@ -1,2 +1,8 @@
 lidar-gta-v:
   - xiaojxkevin/LiDAR-GTA-V
+
+lunarlander:
+  - xiaojxkevin/lunarlander
+
+age_estimation:
+  - xiaojxkevin/age_estimation
