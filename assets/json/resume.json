@@ -32,15 +32,22 @@
       "awarder": "ShanghaiTech University",
       "url": "",
       "summary": "An annual reward for students based on their performance in the last academic year, considering both academic grades as well as general qualities."
+    },
+    {
+      "title": "Third Prize in the preliminary round of the 15th National College Student Mathematics Competition",
+      "date": "2024.01",
+      "awarder": "Chinese Mathematical Society",
+      "url": "",
+      "summary": ""
     }
   ],
   "publications": [
   ],
   "experiences": [
     {
-      "name": "TA for Math Class",
+      "name": "TA for Linear Algebra",
       "summary": "Work as the teaching assistant for Prof. Boqing Xue. Mainly work includes marking homeworks and taking discussion classes.",
-      "highlights": "Linear Algebra",
+      "highlights": "",
       "startDate": "2023-9",
       "endDate": "2024-1",
       "url": "https://github.com/xiaojxkevin/Linear-Algebra-1-fall23"
@@ -70,7 +77,7 @@
     },
     {
       "language": "English",
-      "fluency": "Above Average (TOEFL 93)",
+      "fluency": "Above Average (TOEFL 93, CET-6 602)",
       "icon": ""
     }
   ]
