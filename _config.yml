@@ -4,6 +4,10 @@ position: CS Master Student
 affiliation: ShanghaiTech University
 email: xiaojx2025@shanghaitech.edu.cn
 
+# SEO settings
+url: "https://xiaojxkevin.github.io"
+baseurl: ""
+
 # Search Engine Optimization (SEO)
 # The following information is used to improve the website traffic from search engines, e.g., Google.
 keywords: minimal light
