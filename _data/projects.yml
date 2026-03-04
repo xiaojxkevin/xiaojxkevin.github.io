@@ -1,0 +1,8 @@
+main:
+
+  - title: "LiDAR-GTA-V: Synthetic LiDAR Point Cloud Generation in GTA-V"
+    description: A GTA-V plugin that generates outdoor semantically labeled LiDAR point clouds from the game environment automatically, useful for synthetic pcd collection.
+    image: /assets/img/projects/lidar-gta-v/traffic.png
+    page: /projects/lidar-gta-v/
+    code: https://github.com/xiaojxkevin/LiDAR-GTA-V
+    # notes: Spotlight
