@@ -12,7 +12,7 @@ code: https://github.com/xiaojxkevin/LiDAR-GTA-V
 
 The plugin leverages GTA-V's rich, photorealistic simulation environment as a source of free, labeled synthetic data for autonomous driving and 3D perception research — a valuable complement to real-world datasets.
 
-<img src="/assets/img/projects/lidar-gta-v/traffic.png" alt="Traffic scene in GTA-V" style="width: 60%; display: block; margin: 0 auto;">
+<img src="./assets/img/projects/lidar-gta-v/traffic.png" alt="Traffic scene in GTA-V" style="width: 60%; display: block; margin: 0 auto;">
 
 ## Output Format
 

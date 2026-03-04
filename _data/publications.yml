@@ -5,5 +5,5 @@ main:
     conference_short: IROS
     conference: IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 2025
     pdf: https://ieeexplore.ieee.org/document/11246990
-    image: /assets/img/pub/iros25/pipeline.png
+    image: ./assets/img/pub/iros25/pipeline.png
     # notes: Oral
