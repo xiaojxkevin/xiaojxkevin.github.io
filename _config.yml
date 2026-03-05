@@ -10,9 +10,9 @@ baseurl: ""
 
 # Search Engine Optimization (SEO)
 # The following information is used to improve the website traffic from search engines, e.g., Google.
-keywords: minimal light
-description: The Minimal Light is a simple and elegant jekyll theme for academic personal homepage.
-canonical: https://minimal-light-theme.yliu.me/
+keywords: Jinxi Xiao, ShanghaiTech University, Computer Science, Embodied AI, 3D Vision
+description: Personal academic homepage of Jinxi Xiao, a graduate student at ShanghaiTech University researching Embodied AI and 3D Vision.
+# canonical: https://minimal-light-theme.yliu.me/
 
 # Links 
 # If you don't need one of them, you may delete the corresponding line.
