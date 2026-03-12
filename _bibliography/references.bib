@@ -1,0 +1,110 @@
+# imu-pose.md
+###################################################
+@article{3dGS,
+  author     = {Kerbl, Bernhard and Kopanas, Georgios and Leimkuehler, Thomas and Drettakis, George},
+  title      = {3D Gaussian Splatting for Real-Time Radiance Field Rendering},
+  year       = {2023},
+  issue_date = {August 2023},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {42},
+  number     = {4},
+  issn       = {0730-0301},
+  url        = {https://doi.org/10.1145/3592433},
+  doi        = {10.1145/3592433},
+  abstract   = {Radiance Field methods have recently revolutionized novel-view synthesis of scenes captured with multiple photos or videos. However, achieving high visual quality still requires neural networks that are costly to train and render, while recent faster methods inevitably trade off speed for quality. For unbounded and complete scenes (rather than isolated objects) and 1080p resolution rendering, no current method can achieve real-time display rates. We introduce three key elements that allow us to achieve state-of-the-art visual quality while maintaining competitive training times and importantly allow high-quality real-time (≥ 30 fps) novel-view synthesis at 1080p resolution. First, starting from sparse points produced during camera calibration, we represent the scene with 3D Gaussians that preserve desirable properties of continuous volumetric radiance fields for scene optimization while avoiding unnecessary computation in empty space; Second, we perform interleaved optimization/density control of the 3D Gaussians, notably optimizing anisotropic covariance to achieve an accurate representation of the scene; Third, we develop a fast visibility-aware rendering algorithm that supports anisotropic splatting and both accelerates training and allows realtime rendering. We demonstrate state-of-the-art visual quality and real-time rendering on several established datasets.},
+  journal    = {ACM Trans. Graph.},
+  month      = jul,
+  articleno  = {139},
+  numpages   = {14},
+  keywords   = {novel view synthesis, radiance fields, 3D gaussians, real-time rendering}
+}
+@inproceedings{nerf,
+  title     = {NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis},
+  author    = {Ben Mildenhall and Pratul P. Srinivasan and Matthew Tancik and Jonathan T. Barron and Ravi Ramamoorthi and Ren Ng},
+  year      = {2020},
+  booktitle = {ECCV}
+}
+@article{wang2021neus,
+  title   = {NeuS: Learning Neural Implicit Surfaces by Volume Rendering for Multi-view Reconstruction},
+  author  = {Wang, Peng and Liu, Lingjie and Liu, Yuan and Theobalt, Christian and Komura, Taku and Wang, Wenping},
+  journal = {arXiv preprint arXiv:2106.10689},
+  year    = {2021}
+}
+@inproceedings{volsdf,
+  title     = {Volume rendering of neural implicit surfaces},
+  author    = {Yariv, Lior and Gu, Jiatao and Kasten, Yoni and Lipman, Yaron},
+  booktitle = {Thirty-Fifth Conference on Neural Information Processing Systems},
+  year      = {2021}
+}
+@inproceedings{colmap,
+  author    = {Sch\"{o}nberger, Johannes Lutz and Frahm, Jan-Michael},
+  title     = {Structure-from-Motion Revisited},
+  booktitle = {Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2016}
+}
+@inproceedings{foundationposewen2024,
+  author    = {Bowen Wen, Wei Yang, Jan Kautz, Stan Birchfield},
+  title     = {{FoundationPose}: Unified 6D Pose Estimation and Tracking of Novel Objects},
+  booktitle = {CVPR},
+  year      = {2024}
+}
+@inproceedings{ronin,
+  author    = {Herath, Sachini and Yan, Hang and Furukawa, Yasutaka},
+  booktitle = {2020 IEEE International Conference on Robotics and Automation (ICRA)},
+  title     = {RoNIN: Robust Neural Inertial Navigation in the Wild: Benchmark, Evaluations, & New Methods},
+  year      = {2020},
+  volume    = {},
+  number    = {},
+  pages     = {3146-3152},
+  keywords  = {Inertial navigation;Three-dimensional displays;Robustness;Estimation;Trajectory;Task analysis;Gravity},
+  doi       = {10.1109/ICRA40945.2020.9196860}
+}
+@inproceedings{ctin,
+  title={CTIN: Robust contextual transformer network for inertial navigation},
+  author={Rao, Bingbing and Kazemi, Ehsan and Ding, Yifan and Shila, Devu M and Tucker, Frank M and Wang, Liqiang},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={36},
+  number={5},
+  pages={5413--5421},
+  year={2022}
+}
+@inproceedings{chen2018ionet,
+author = {Chen, Changhao and Lu, Xiaoxuan and Markham, Andrew and Trigoni, Niki},
+title = {IONet: learning to cure the curse of drift in inertial odometry},
+year = {2018},
+isbn = {978-1-57735-800-8},
+publisher = {AAAI Press},
+abstract = {Inertial sensors play a pivotal role in indoor localization, which in turn lays the foundation for pervasive personal applications. However, low-cost inertial sensors, as commonly found in smartphones, are plagued by bias and noise, which leads to unbounded growth in error when accelerations are double integrated to obtain displacement. Small errors in state estimation propagate to make odometry virtually unusable in a matter of seconds. We propose to break the cycle of continuous integration, and instead segment inertial data into independent windows. The challenge becomes estimating the latent states of each window, such as velocity and orientation, as these are not directly observable from sensor data. We demonstrate how to formulate this as an optimization problem, and show how deep recurrent neural networks can yield highly accurate trajectories, outperforming state-of-the-art shallow techniques, on a wide range of tests and attachments. In particular, we demonstrate that IONet can generalize to estimate odometry for non-periodic motion, such as a shopping trolley or baby-stroller, an extremely challenging task for existing techniques.},
+booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence and Thirtieth Innovative Applications of Artificial Intelligence Conference and Eighth AAAI Symposium on Educational Advances in Artificial Intelligence},
+articleno = {792},
+numpages = {9},
+location = {New Orleans, Louisiana, USA},
+series = {AAAI'18/IAAI'18/EAAI'18}
+}
+@inproceedings{tartanimu,
+  title     = {Tartan IMU: A Light Foundation Model for Inertial Positioning in Robotics},
+  author    = {Zhao, Shibo and Zhou, Sifan and Blanchard, Raphael and Qiu, Yuheng and Wang, Wenshan and Scherer, Sebastian},
+  booktitle = {Proceedings of the Computer Vision and Pattern Recognition Conference},
+  pages     = {22520--22529},
+  year      = {2025}
+}
+@ARTICLE{airio,
+  author={Qiu, Yuheng and Xu, Can and Chen, Yutian and Zhao, Shibo and Geng, Junyi and Scherer, Sebastian},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={AirIO: Learning Inertial Odometry With Enhanced IMU Feature Observability}, 
+  year={2025},
+  volume={10},
+  number={9},
+  pages={9368-9375},
+  keywords={Autonomous aerial vehicles;Sensors;Vehicle dynamics;Odometry;Principal component analysis;Pedestrians;Gravity;Feature extraction;Accuracy;Decoding;Aerial systems: perception and autonomy;deep learning methods;localization},
+  doi={10.1109/LRA.2025.3581130}}
+@misc{autoOdom,
+      title={AutoOdom: Learning Auto-regressive Proprioceptive Odometry for Legged Locomotion}, 
+      author={Changsheng Luo and Yushi Wang and Wenhan Cai and Mingguo Zhao},
+      year={2025},
+      eprint={2511.18857},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2511.18857}, 
+}

@@ -82,6 +82,25 @@
         max-width: 100%;
         overflow-x: auto;
       }
+      /* Bibliography / Citations */
+      .project-content ol.bibliography {
+        list-style: none;
+        padding-left: 0;
+        font-size: 0.92em;
+        line-height: 1.6;
+      }
+      .project-content ol.bibliography li {
+        margin-bottom: 0.5em;
+        padding-left: 2em;
+        text-indent: -2em;
+      }
+      sup.citation a {
+        text-decoration: none;
+        color: var(--global-theme-color, #002D72);
+      }
+      sup.citation a:hover {
+        text-decoration: underline;
+      }
       .project-content blockquote {
         border-left: 3px solid var(--global-theme-color, #002D72);
         padding: 0.5em 1em;

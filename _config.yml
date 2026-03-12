@@ -58,6 +58,21 @@ collections:
 
 plugins:
   - jekyll-remote-theme
+  - jekyll-scholar
+
+scholar:
+  style: ieee
+  locale: en
+  source: ./_bibliography
+  bibliography: references.bib
+  bibliography_list_tag: ol
+  bibliography_item_tag: li
+  bibliography_class: bibliography
+  replace_strings: true
+  join_strings:  true
+  details_dir: bibliography
+  details_link: Details
+  query: "@*"
 
 # The following files will be removed from the generated website.
 exclude:
@@ -69,3 +84,4 @@ exclude:
   - html_source_file/
   - Dockerfile
   - docker-compose.yml
+  - private
