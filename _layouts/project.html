@@ -45,6 +45,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>hljs.highlightAll();</script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        document
+          .querySelectorAll('.project-content ol.bibliography li > span')
+          .forEach(function (node) {
+            node.textContent = node.textContent.replace(/^\[\d+\]\s*/, '');
+          });
+      });
+    </script>
 
     <style>
       .project-content {
@@ -84,15 +93,18 @@
       }
       /* Bibliography / Citations */
       .project-content ol.bibliography {
-        list-style: none;
-        padding-left: 0;
+        list-style: decimal;
+        padding-left: 2.2em;
         font-size: 0.92em;
         line-height: 1.6;
       }
+      .project-content ol.bibliography li::marker {
+        content: "[" counter(list-item) "] ";
+      }
       .project-content ol.bibliography li {
         margin-bottom: 0.5em;
-        padding-left: 2em;
-        text-indent: -2em;
+        padding-left: 0;
+        text-indent: 0;
       }
       sup.citation a {
         text-decoration: none;

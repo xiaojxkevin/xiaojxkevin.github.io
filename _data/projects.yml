@@ -1,4 +1,9 @@
 main:
+  - title: "Tracking via Active Inertial Sensing"
+    description: To recover full 6D object pose from IMU.
+    image: ./assets/img/projects/imu-pose/pipeline.png
+    page: /projects/imu-pose/
+    # code: 
 
   - title: "LiDAR-GTA-V: Synthetic LiDAR Point Cloud Generation in GTA-V"
     description: A GTA-V plugin that generates outdoor semantically labeled LiDAR point clouds from the game environment automatically, useful for synthetic pcd collection.
@@ -6,9 +11,3 @@ main:
     page: /projects/lidar-gta-v/
     code: https://github.com/xiaojxkevin/LiDAR-GTA-V
     # notes: Spotlight
-
-  - title: "6D Pose Tracking via Active Inertial Sensing"
-    description: To recover full 6D object pose from IMU.
-    image: ./assets/img/projects/imu-pose/pipeline.png
-    page: /projects/imu-pose/
-    # code: 
