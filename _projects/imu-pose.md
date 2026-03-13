@@ -1,11 +1,11 @@
 ---
 layout: project
-title: TODO
+title: Tracking via Active Inertial Sensing
 date: 2026-03-12
 authors: Jinxi Xiao
 ---
 
-## Motivation
+## Introduction
 
 Recent progress in tracking, scene representation (3DGS {% cite 3dGS %}, NeRF {% cite nerf %}), and reconstruction (e.g., NeuS/VolSDF {% cite wang2021neus volsdf %} and COLMAP {% cite colmap %}) has made geometry and appearance recovery of static scenes increasingly mature. A natural next step is dynamic-scene understanding, including physically consistent motion modeling and interaction prediction. Although modern video and motion generation methods are promising, they rarely preserve accurate physical quantities, largely due to limited high-quality training data.
 
@@ -53,16 +53,29 @@ At this stage, the central technical question is whether accurate velocity can b
 - Existing benchmark platforms (e.g., pedestrians, legged robots, and mobile robots) often exhibit relatively structured motion statistics, such as quasi-periodic gait patterns. This structural regularity can implicitly support velocity regression, yet the effective motion-distribution assumptions are rarely quantified explicitly.
 - In contrast, our target setting involves arbitrary object motions, because the IMU may be attached to diverse objects with distinct and non-periodic dynamics. This regime is less explored in prior work. Therefore, instead of directly regressing velocity magnitude and direction jointly, we first study **velocity direction classification** to improve robustness against sensor noise and bias.
 
-## Method
+## Method and Experiments
+
+In this section, we first discuss the design of the neural network we are using and then the dataset collected and its results.
 
 ### Backbone: iTransformer
 
-Ronin dataset, seen: avg ATE:3.8065709457006482, avg RTE:2.751028032748224
-unseen: avg ATE:5.474138279153763, avg RTE:4.617708072656981
+IMU windows are multivariate time-series signals. To model temporal dependencies while maintaining Transformer scalability, we build our backbone on iTransformer {% cite iTransformer %}, where time points from each series are embedded as variate tokens. Following RoNIN {% cite ronin %}, we additionally use a 1D convolution-based embedding module for raw inertial features and add learnable position encoding on the temporal domain. The full architecture is shown in [Figure 3](#fig-arch).
 
-without pe: seen	4.165752	2.988466 ; unseen	5.739526	4.848667
+<figure id="fig-arch" style="text-align: center; margin: 1.5em auto;">
+  <img src="/assets/img/projects/imu-pose/arch.svg" alt="Arch" style="max-width: 75%; height: auto;">
+  <figcaption><strong>Figure 3.</strong> Overview of the proposed inertial-motion network based on iTransformer with 1D convolutional embedding and learnable position encoding.</figcaption>
+</figure>
 
-### On our own dataset
+We first train and evaluate the model on the public RoNIN dataset {% cite ronin %}, which contains large-scale human inertial trajectories. This stage is intended to verify whether the proposed architecture can learn meaningful motion information from IMU streams before moving to our self-collected setting. We compare against representative baselines and report ATE/RTE (lower is better):
+
+|                | RONIN-ResNet {% cite ronin %} | CTIN {% cite rao2022ctin %} | iMoT {% cite nguyen2025imot %} | DiffusionIMU {% cite diffusionimu %} | M2EIT {% cite M2EIT %} |   Ours    |
+| :------------: | :---------------------------: | --------------------------- | :----------------------------: | :----------------------------------: | :--------------------: | :-------: |
+|  Seen ATE/RTE  |           3.70/2.78           | 4.62/2.81                   |           3.78/2.68            |              3.64/2.72               |       3.58/2.76        | 3.80/2.75 |
+| Unseen ATE/RTE |           5.48/4.56           | 5.61/4.48                   |           5.31/4.39            |              5.27/4.31               |       5.19/4.57        | 5.47/4.61 |
+
+Although the proposed model does not yet achieve state-of-the-art performance, the results indicate competitive accuracy and, more importantly, validate the feasibility of our design. We emphasize that this benchmark is used as a proof-of-capability study; exhaustive hyper-parameter tuning was intentionally not performed at this stage.
+
+### Self-Collected 
 
 
 
