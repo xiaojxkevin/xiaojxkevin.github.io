@@ -23,8 +23,7 @@ zhihu_link: https://www.zhihu.com/people/xiaojx005
 #linkedin: https://www.linkedin.com/
 #twitter: https://twitter.com/
 
-# Images (e.g., your profile picture and your website's favicon) 
-# "favicon" and "favicon_dark" are used for the light and dark modes, respectively. 
+# https://favicon.io/favicon-generator/
 avatar: ./assets/img/avatar.png
 favicon: ./assets/img/favicon.png
 favicon_dark: ./assets/img/favicon-dark.png
