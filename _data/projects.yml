@@ -1,7 +1,7 @@
 main:
   - title: "Tracking via Active Inertial Sensing"
     description: A feasibility study on IMU-based motion recovery, focusing on velocity-direction classification.
-    image: ./assets/img/projects/imu-pose/pipeline.png
+    image: ./assets/img/projects/imu-pose/teaser.svg
     page: /projects/imu-pose/
     # code: 
 
