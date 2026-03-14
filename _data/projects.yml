@@ -1,6 +1,6 @@
 main:
   - title: "Tracking via Active Inertial Sensing"
-    description: To recover full 6D object pose from IMU.
+    description: A feasibility study on IMU-based motion recovery, focusing on velocity-direction classification.
     image: ./assets/img/projects/imu-pose/pipeline.png
     page: /projects/imu-pose/
     # code: 

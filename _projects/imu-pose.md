@@ -2,7 +2,7 @@
 layout: project
 title: Tracking via Active Inertial Sensing
 date: 2026-03-12
-authors: Jinxi Xiao
+authors: Jinxi Xiao (also with Heng'an Zhou, Ran Ji and Boyang Xia)
 ---
 
 ## Introduction
@@ -18,7 +18,7 @@ Simulation can partially alleviate data scarcity, but it is still limited in rea
 
 A straightforward extension is to introduce additional sensing modalities. IMU-based human motion-capture systems (e.g., Xsens and Noitom) demonstrate key advantages: no line-of-sight requirement, resilience to occlusion, high-frequency measurements, and relatively low-cost mobile hardware. Following this intuition, we investigate whether attaching one IMU to each object enables direct sensing of inter-object dynamics.
 
-Inspired by prior IMU-based trajectory estimation on pedestrians {% cite chen2018ionet ronin ctin %} and robotic platforms {% cite tartanimu airio autoOdom %}, we formulate object tracking as a motion-recovery problem from raw inertial streams (accelerometer + gyroscope). Instead of directly estimating full 6D pose through naive double integration, we prioritize learning stable intermediate motion quantities (e.g., velocity) and use them as a foundation for subsequent trajectory reconstruction. This project therefore emphasizes feasibility analysis of inertial motion recovery; while the final objective is full 6D pose tracking, the current stage does not yet achieve complete and reliable 6D recovery.
+Inspired by prior IMU-based trajectory estimation on pedestrians {% cite chen2018ionet ronin ctin %} and robotic platforms {% cite tartanimu airio autoOdom %}, we formulate object tracking as a motion-recovery problem from raw inertial streams (accelerometer + gyroscope). Instead of directly estimating full 6D pose through naive double integration, we prioritize learning stable intermediate motion quantities (e.g., velocity direction) and use them as a foundation for later trajectory reconstruction. Accordingly, this report is a feasibility study on inertial motion recovery rather than a full 6D pose-estimation/tracking system or visual-inertial-coupled system.
 
 ## Basics About the WitMotion 9-axis IMUs
 
@@ -55,15 +55,36 @@ At this stage, the central technical question is whether accurate velocity can b
 
 ## Method and Experiments
 
-In this section, we first discuss the design of the neural network we are using and then the dataset collected and its results.
+This section presents the model design and a staged experimental study. To improve readability, we replace internal numeric dataset IDs with semantic names and keep the original IDs in parentheses:
+
+- **AXIS-7** <!--(original: 0121)-->: 7-class axis-aligned motion dataset.
+- **DIR27-L** <!--(original: 0123)-->: 27-class directional dataset, larger split (200 sequences/class).
+- **DIR27-S** <!--(original: 0126)-->: 27-class directional dataset, smaller split (100 sequences/class).
+- **POLY-27** <!--(new polyline set)-->: 27-class zigzag/polyline motion dataset.
+
+The xArm6 recording procedures for linear and polyline trajectories are shown in [Figure 3](#fig-recording).
+
+<figure id="fig-recording" style="margin: 1.5em auto;">
+  <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/linear.gif" alt="xArm6 linear trajectory recording" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(a) Linear trajectory recording</em></div>
+    </div>
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/polyline.gif" alt="xArm6 polyline trajectory recording" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(b) Polyline trajectory recording</em></div>
+    </div>
+  </div>
+  <figcaption><strong>Figure 3.</strong> Robot-assisted IMU data recording with xArm6 under two motion programs: straight-line motion (left) and waypoint-driven polyline motion (right).</figcaption>
+</figure>
 
 ### Backbone: iTransformer
 
-IMU windows are multivariate time-series signals. To model temporal dependencies while maintaining Transformer scalability, we build our backbone on iTransformer {% cite iTransformer %}, where time points from each series are embedded as variate tokens. Following RoNIN {% cite ronin %}, we additionally use a 1D convolution-based embedding module for raw inertial features and add learnable position encoding on the temporal domain. The full architecture is shown in [Figure 3](#fig-arch).
+IMU windows are multivariate time-series signals. To model temporal dependencies while maintaining Transformer scalability, we build our backbone on iTransformer {% cite iTransformer %}, where time points from each series are embedded as variate tokens. Following RoNIN {% cite ronin %}, we additionally use a 1D convolution-based embedding module for raw inertial features and add learnable position encoding on the temporal domain. The full architecture is shown in [Figure 4](#fig-arch).
 
 <figure id="fig-arch" style="text-align: center; margin: 1.5em auto;">
   <img src="/assets/img/projects/imu-pose/arch.svg" alt="Arch" style="max-width: 75%; height: auto;">
-  <figcaption><strong>Figure 3.</strong> Overview of the proposed inertial-motion network based on iTransformer with 1D convolutional embedding and learnable position encoding.</figcaption>
+  <figcaption><strong>Figure 4.</strong> Overview of the proposed inertial-motion network based on iTransformer with 1D convolutional embedding and learnable position encoding.</figcaption>
 </figure>
 
 We first train and evaluate the model on the public RoNIN dataset {% cite ronin %}, which contains large-scale human inertial trajectories. This stage is intended to verify whether the proposed architecture can learn meaningful motion information from IMU streams before moving to our self-collected setting. We compare against representative baselines and report ATE/RTE (lower is better):
@@ -75,9 +96,65 @@ We first train and evaluate the model on the public RoNIN dataset {% cite ronin 
 
 Although the proposed model does not yet achieve state-of-the-art performance, the results indicate competitive accuracy and, more importantly, validate the feasibility of our design. We emphasize that this benchmark is used as a proof-of-capability study; exhaustive hyper-parameter tuning was intentionally not performed at this stage.
 
-### Self-Collected 
+### Velocity Direction Classification
 
+Instead of directly regressing velocity vectors, we first investigate a proxy task: classifying motion direction from raw IMU streams. The corresponding regression formulation can be written as $$\mathcal{f}([\boldsymbol{\omega}_{k:k+100},\mathbf{a}_{k:k+100}]) \rightarrow \bar{\mathbf{v}}$$. We organize experiments progressively by motion complexity.
 
+#### Phase 1: Axis-Aligned Motion
+
+We start with a 7-class setting: straight-line motions along the positive and negative directions of the three body axes ($$\pm x, \pm y, \pm z$$), plus a *static* class.
+
+Data collection: We collect the **AXIS-7** dataset using xArm6 Cartesian velocity control (`vc_set_cartesian_velocity`). The dataset contains approximately 500 sequences (about 5 hours). To reduce orientation bias, we apply diverse initial in-plane and out-of-plane rotations before each straight-line segment, while keeping orientation fixed during the segment.
+
+Preprocessing: Continuous streams are segmented into fixed temporal windows. Inputs are body-frame accelerometer and gyroscope measurements. A key step is gravity compensation: because the 3D-printed fixture aligns the IMU frame with the robot gripper frame, and the base is assumed level (gravity is vertical in the base frame), we compute gravity in the IMU body frame from robot forward kinematics (FK) and subtract it from acceleration.
+
+Results: The model achieves approximately 95% accuracy/F1-score, indicating that with explicit gravity compensation, fundamental linear motions can be robustly separated despite varying initial orientations.
+
+#### Phase 2: 27-Class Multi-Directional Motion
+
+We then expand the label space to 27 directions, defined by quantizing each direction-vector component as $$x, y, z \in \{-1, 0, 1\}$$.
+
+Data collection: We collect two datasets under the same protocol: **DIR27-L** (200 sequences/class, ~7.5 hours) and **DIR27-S** (100 sequences/class). Both include the same orientation augmentations as Phase 1.
+
+Results and the "jump case": Intra-dataset training/testing (or training on the merged DIR27-L + DIR27-S set) yields about 90% accuracy. However, cross-dataset transfer reveals a substantial generalization gap:
+- Train on DIR27-L, test on DIR27-S: accuracy drops to ~58%.
+- Train on DIR27-S, test on DIR27-L: accuracy drops to ~53%.
+
+As detailed in [Figure 5](#fig-jump-detail), the error patterns in both transfer directions are qualitatively similar. This suggests the issue is not dominated by one "bad" split, but rather by shared distribution mismatch and limited statistical coverage. A plausible interpretation is that larger and more diverse training data, together with stronger domain-generalization strategies, are necessary to learn stable physical features rather than dataset-specific artifacts.
+
+<figure id="fig-jump-detail" style="margin: 1.5em auto;">
+  <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/train0123_test0126.png" alt="Train on DIR27-L test on DIR27-S" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(a) Train DIR27-L, test DIR27-S</em></div>
+    </div>
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/train0126_test0123.png" alt="Train on DIR27-S test on DIR27-L" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(b) Train DIR27-S, test DIR27-L</em></div>
+    </div>
+  </div>
+  <figcaption><strong>Figure 5.</strong> Cross-dataset jump-case diagnostics. The two transfer directions exhibit similar error structures, supporting the hypothesis that data diversity and domain-robust training are both insufficient at the current stage.</figcaption>
+</figure>
+
+To probe this failure mode, we further evaluate a rotation-equivariant augmentation strategy inspired by RIO {% cite cao2022RIO %}. The principle is that rotated inertial inputs should correspond to rotated velocity labels, i.e., $$\left([\boldsymbol{\omega}_{k:k+100},\mathbf{a}_{k:k+100}],\bar{\mathbf{v}}\right)$$ and $$\left([\mathbf{R}\boldsymbol{\omega}_{k:k+100},\mathbf{R}\mathbf{a}_{k:k+100}],\mathbf{R}\bar{\mathbf{v}}\right)$$ should be equivalent training samples.
+
+In our setting, this augmentation degrades performance rather than improving it. A likely explanation is that practical non-idealities (e.g., axis-dependent sensor **bias** and controller-induced dynamics in xArm6 velocity execution) violate strict rotational equivalence. As an additional diagnostic, we perform a label-flip test on AXIS-7 by swapping the $$+y/-y$$ labels at evaluation time; the F1 score on the y-axis classes drops by ~25%, supporting the claim that the measured data distribution cannot be modeled as a simple rigid rotation of idealized inertial signals.
+
+#### Phase 3: Polyline (Zigzag) Motions
+
+To better approximate real trajectories with direction changes, we introduce waypoint-driven polyline motions. The IMU orientation remains fixed during each sequence, while instantaneous velocity direction changes over time.
+
+Supervision strategy: Because motion within one window is no longer strictly linear, we define the target as the net displacement vector from the first to the last frame in the window, then map it to the **nearest** class among the same 27 directional bins.
+
+Data collection: We collect the **POLY-27** dataset with 200 sequences/class following zigzag trajectories.
+
+Results: Accuracy decreases to 49%. This indicates that the single-label-per-window assumption becomes invalid when trajectories are locally non-linear, even if their net displacement is well defined.
+
+## Conclusions
+
+Axis-aligned experiments show that direction classification is feasible under constrained motions with controlled orientation and accurate gravity compensation. However, three observations indicate limited robustness for unconstrained object dynamics: (1) a large cross-dataset generalization gap in DIR27 transfer, (2) failure of rotation-equivariant augmentation under real sensor/control non-idealities, and (3) substantial performance degradation on polyline trajectories where a single window label is insufficient.
+
+Overall, these findings suggest that discrete direction classification is a useful diagnostic tool but not a sufficiently stable endpoint for practical inertial object tracking. We therefore conclude this stage of the project and release the analysis to support follow-up works.
 
 ## References
 
