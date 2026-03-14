@@ -1,4 +1,4 @@
-# xiaojx's Personal Homepage
+# Jinxi Xiao's Personal Homepage
 
 My academic personal homepage, built with Jekyll and the [Minimal Light](https://github.com/yaoyao-liu/minimal-light) theme. Deployed via GitHub Pages.
 
