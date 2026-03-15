@@ -7,13 +7,13 @@ authors: Jinxi Xiao (also with Heng'an Zhou, Ran Ji and Boyang Xia)
 
 ## Introduction
 
-Recent progress in tracking, scene representation (3DGS {% cite 3dGS %}, NeRF {% cite nerf %}), and reconstruction (e.g., NeuS/VolSDF {% cite wang2021neus volsdf %} and COLMAP {% cite colmap %}) has made geometry and appearance recovery of static scenes increasingly mature. A natural next step is dynamic-scene understanding, including physically consistent motion modeling and interaction prediction. Although modern video and motion generation methods are promising, they rarely preserve accurate physical quantities, largely due to limited high-quality training data.
+Recent progress in tracking, scene representation (3DGS {% cite 3dGS %}, NeRF {% cite nerf %}), and reconstruction (e.g., NeuS/VolSDF {% cite wang2021neus volsdf %} and COLMAP {% cite colmap %}) has made geometry and appearance recovery of static scenes gradually mature. A natural next step is dynamic-scene understanding, including physically consistent motion modeling and interaction prediction. Although modern video and motion generation methods are promising, they rarely preserve accurate physical quantities, largely due to limited high-quality training data.
 
 Simulation can partially alleviate data scarcity, but it is still limited in realism and interaction complexity. Dense multi-view capture systems require many calibrated and time-synchronized cameras, resulting in high deployment cost and constrained operating conditions (e.g., controlled indoor environments and marker-heavy workflows). Monocular methods, such as FoundationPose-style {% cite foundationposewen2024 %} 6D tracking, are attractive but fragile under object interactions, where occlusion and visual ambiguity degrade reliability (see [Figure 1](#fig-sam3)). These limitations motivate robust and scalable approaches grounded in physical measurements.
 
 <figure id="fig-sam3" style="text-align: center; margin: 1.5em auto;">
   <img src="/assets/img/projects/imu-pose/sam3.gif" alt="IMU Pose Tracking Demo" style="max-width: 100%; height: auto;">
-  <figcaption><strong>Figure 1.</strong> Segmentation and tracking of dynamic objects using SAM3. The system fails due to heavily texture-repeated bowling pins and inter-object occlusions. </figcaption>
+  <figcaption><strong>Figure 1.</strong> Segmentation and tracking of dynamic objects using SAM3 {% cite carion2025sam3segmentconcepts %}. The system fails due to heavily texture-repeated bowling pins and inter-object occlusions. </figcaption>
 </figure>
 
 A straightforward extension is to introduce additional sensing modalities. IMU-based human motion-capture systems (e.g., Xsens and Noitom) demonstrate key advantages: no line-of-sight requirement, resilience to occlusion, high-frequency measurements, and relatively low-cost mobile hardware. Following this intuition, we investigate whether attaching one IMU to each object enables direct sensing of inter-object dynamics.
@@ -24,9 +24,9 @@ Inspired by prior IMU-based trajectory estimation on pedestrians {% cite chen201
 
 Throughout this project, we employ WitMotion 9-axis WT901WIFI IMUs. Several sensor characteristics should be clarified before introducing the downstream method.
 
-The WT901WIFI provides stable inertial measurements at 100 Hz, which is adequate for our object-level motion-capture setting. However, in most real-world environments we do not rely on the device-provided fused orientation. Its onboard fusion depends on accelerometer, gyroscope, and particularly magnetometer observations; in scenes containing metallic structures and nearby electronic equipment, magnetic disturbances are common and can substantially degrade yaw and overall attitude estimates. Accordingly, unless the environment is magnetically clean (i.e., with minimal metal and electromagnetic interference), the fused orientation output is treated as unreliable for downstream 6D tracking.
+The WT901WIFI provides stable inertial measurements at 100 Hz, which is adequate for our object-level motion-capture setting. However, in most real-world environments we do not rely on the device-provided fused orientation. Its onboard fusion depends on accelerometer, gyroscope, and particularly magnetometer observations; in scenes containing metallic structures and nearby electronic equipment, magnetic disturbances are common and can substantially degrade yaw and overall attitude estimates. Accordingly, unless the environment is magnetically clean (i.e., with minimal metal and electromagnetic interference), the fused orientation output is treated as unreliable.
 
-The Allan-variance {% cite AllanVarianceRos %} analysis (shown in [Figure 2](#fig-imu-allan)) reveals clear axis-dependent behavior in the accelerometer: the **z-axis exhibits substantially higher noise** and **greater bias instability** than the x- and y-axes.
+The Allan-variance {% cite AllanVarianceRos %} analysis (shown in [Figure 2](#fig-imu-allan)) reveals clear axis-dependent behavior in the accelerometer: the **z-axis** exhibits substantially **higher noise** and **greater bias instability** than the x- and y-axes.
 
 <figure id="fig-imu-allan" style="margin: 1.5em auto;">
   <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
@@ -40,7 +40,7 @@ The Allan-variance {% cite AllanVarianceRos %} analysis (shown in [Figure 2](#fi
   <figcaption><strong>Figure 2.</strong> Allan-variance curves of the WT901WIFI accelerometer (left) and gyroscope (right).</figcaption>
 </figure>
 
-In summary, the WT901WIFI is a practical low-cost IMU (approximately 100 RMB) that provides convenient 100 Hz measurements for dynamic-scene data collection. While it does not match the precision of premium devices (e.g., Xsens Movella Dot or Noitom sensors), it offers a favorable cost-performance trade-off for large-scale experimentation.
+In summary, the WT901WIFI is a practical low-cost IMU (~100 RMB) that provides convenient 100 Hz measurements for dynamic-scene data collection. While it does not match the precision of premium devices (e.g., Xsens Movella Dot or Noitom sensors), it offers a favorable cost-performance trade-off for large-scale experimentation.
 
 ## Problem Formulation and Data Collection Protocol
 
@@ -152,9 +152,9 @@ Results: Accuracy decreases to 49%. This indicates that the single-label-per-win
 
 ## Conclusions
 
-Axis-aligned experiments show that direction classification is feasible under constrained motions with controlled orientation and accurate gravity compensation. However, three observations indicate limited robustness for unconstrained object dynamics: (1) a large cross-dataset generalization gap in DIR27 transfer, (2) failure of rotation-equivariant augmentation under real sensor/control non-idealities, and (3) substantial performance degradation on polyline trajectories where a single window label is insufficient.
+Axis-aligned experiments show that direction classification is feasible under constrained motions with controlled orientation and accurate gravity compensation. However, three observations indicate limited robustness for unconstrained object dynamics: (1) a large cross-dataset generalization gap in DIR27 transfer, (2) failure of rotation-equivariant augmentation under real sensor/control non-idealities, and (3) substantial performance degradation on polyline trajectories where a single window label is insufficient or is not properly used.
 
-Overall, these findings suggest that discrete direction classification is a useful diagnostic tool but not a sufficiently stable endpoint for practical inertial object tracking. We therefore conclude this stage of the project and release the analysis to support follow-up works.
+Overall, these findings suggest that discrete direction classification is a useful diagnostic tool but not a sufficiently stable endpoint for practical inertial object tracking. And due to various reasons we therefore conclude this stage of the project and hoping that this project can provide insights to following works.
 
 ## References
 
