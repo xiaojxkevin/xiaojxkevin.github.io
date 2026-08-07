@@ -1,9 +1,9 @@
 main:
-  - title: "Tracking via Active Inertial Sensing"
+  - title: "Active Inertial Sensing for Ego-Centric Motion Recovery"
     description: A feasibility study on IMU-based motion recovery, focusing on velocity-direction classification.
     image: ./assets/img/projects/imu-pose/teaser.svg
     page: /projects/imu-pose/
-    # code: 
+    code: https://github.com/xiaojxkevin/imu-direction-clf
 
   - title: "LiDAR-GTA-V: Synthetic LiDAR Point Cloud Generation in GTA-V"
     description: A GTA-V plugin that generates outdoor semantically labeled LiDAR point clouds from the game environment automatically, useful for synthetic pcd collection.

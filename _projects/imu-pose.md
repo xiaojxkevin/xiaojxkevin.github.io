@@ -1,175 +1,155 @@
 ---
 layout: project
-title: Tracking via Active Inertial Sensing
+title: Active Inertial Sensing for Ego-Centric Motion Recovery
 date: 2026-03-17
 authors: Jinxi Xiao (also with Heng'an Zhou, Ran Ji and Boyang Xia)
 ---
 
-## Introduction
+## Overview
 
-Recent progress in tracking, scene representation (3DGS {% cite 3dGS %}, NeRF {% cite nerf %}), and reconstruction (e.g., NeuS/VolSDF {% cite wang2021neus volsdf %} and COLMAP {% cite colmap %}) has made geometry and appearance recovery of static scenes gradually mature. A natural next step is dynamic-scene understanding, including physically consistent motion modeling and interaction prediction. Although modern video and motion generation methods are promising, they rarely preserve accurate physical quantities, largely due to limited high-quality training data.
+This project asks a deliberately narrow question: **when a single low-cost IMU is rigidly attached to a moving object, what can be recovered about its ego-centric motion from the raw inertial stream?** This is a sensor-centric first step toward object-centric sensing—not yet a complete 6D tracker or a visual-inertial fusion system.
 
-Simulation can partially alleviate data scarcity, but it is still limited in realism and interaction complexity. Dense multi-view capture systems require many calibrated and time-synchronized cameras, resulting in high deployment cost and constrained operating conditions (e.g., controlled indoor environments and marker-heavy workflows). Monocular methods, such as FoundationPose-style {% cite foundationposewen2024 %} 6D tracking, are attractive but fragile under object interactions, where occlusion and visual ambiguity degrade reliability (see [Figure 1](#fig-sam3)). These limitations motivate robust and scalable approaches grounded in physical measurements.
+The motivation comes from dynamic-scene understanding. Static geometry and appearance can now be reconstructed reliably with methods such as 3D Gaussian Splatting {% cite 3dGS %}, NeRF {% cite nerf %}, NeuS/VolSDF {% cite wang2021neus volsdf %}, and COLMAP {% cite colmap %}. Motion under contact and occlusion remains substantially harder. Dense multi-view systems provide accurate capture but require calibrated, synchronized cameras; monocular pose tracking is easier to deploy but becomes fragile when objects occlude one another or share repeated appearance. Figure 1 illustrates this failure mode: segmentation and tracking break down for visually similar bowling pins under strong inter-object occlusion.
 
 <figure id="fig-sam3" style="text-align: center; margin: 1.5em auto;">
-  <img src="/assets/img/projects/imu-pose/sam3.gif" alt="IMU Pose Tracking Demo" style="max-width: 100%; height: auto;">
-  <figcaption><strong>Figure 1.</strong> Segmentation and tracking of dynamic objects using SAM3 {% cite carion2025sam3segmentconcepts %}. The system fails due to heavily texture-repeated bowling pins and inter-object occlusions. </figcaption>
+  <img src="/assets/img/projects/imu-pose/sam3.gif" alt="Segmentation and tracking failure caused by repeated object appearance and occlusion" style="max-width: 100%; height: auto;">
+  <figcaption><strong>Figure 1.</strong> A SAM3 {% cite carion2025sam3segmentconcepts %} segmentation-and-tracking failure under repeated appearance and inter-object occlusion.</figcaption>
 </figure>
 
-A straightforward extension is to introduce additional sensing modalities. IMU-based human motion-capture systems (e.g., Xsens and Noitom) demonstrate key advantages: no line-of-sight requirement, resilience to occlusion, high-frequency measurements, and relatively low-cost mobile hardware. Following this intuition, we investigate whether attaching one IMU to each object enables direct sensing of inter-object dynamics.
+IMUs offer a complementary route: they require no line of sight, operate at high rate, and are inexpensive enough to attach to individual objects. Human motion-capture systems already exploit these properties, but our target regime is more difficult. A manipulated object may undergo non-periodic motion, abrupt changes of direction, and far weaker motion priors than pedestrian gait or robot locomotion. Rather than applying naive double integration to estimate pose, we use velocity direction as an interpretable intermediate target and map out the conditions under which it is—and is not—recoverable.
 
-Inspired by prior IMU-based trajectory estimation on pedestrians {% cite chen2018ionet ronin ctin %} and robotic platforms {% cite tartanimu airio autoOdom %}, we formulate object tracking as a motion recovery problem from raw inertial streams (accelerometer and gyroscope). Instead of directly estimating full 6D pose through naive double integration, we prioritize learning stable intermediate motion quantities (e.g., velocity direction) and use them as a foundation for later trajectory reconstruction. Accordingly, this report presents a feasibility study on inertial motion recovery rather than a full 6D pose estimation/tracking system or visual-inertial fusion framework.
+The main outcomes are clear. A single sensor recognizes coarse, homogeneous motion very well (95.82% on AXIS-7), but performance falls sharply across data-collection conditions and for windows containing direction changes. These are useful negative results: they identify condition invariance and temporally richer supervision as the central requirements for practical inertial object sensing.
 
-## Basics About the WitMotion 9-axis IMUs
+## Why Single-IMU Ego-Motion Is Difficult
 
-Throughout this project, we employ WitMotion 9-axis WT901WIFI IMUs. Several sensor characteristics should be clarified before introducing the downstream method.
+Most learning-based inertial odometry work targets pedestrians {% cite chen2018ionet ronin ctin %} or robotic platforms {% cite tartanimu airio autoOdom %}. Such platforms have structured dynamics—quasi-periodic gait or controller-regularized trajectories—so learning a mapping from an IMU window to average velocity can be effective within the observed motion distribution. Physically, however, integrating acceleration over a finite interval yields a velocity **increment** $$\Delta\mathbf{v}$$, not an absolute velocity. Window-to-velocity prediction therefore relies on a learned local motion prior.
 
-The WT901WIFI provides stable inertial measurements at 100 Hz, which is adequate for our object-level motion capture setting. However, in most real-world environments we do not rely on the device-provided fused orientation. Its onboard fusion depends on accelerometer, gyroscope, and particularly magnetometer observations. In scenes containing metallic structures and nearby electronic equipment, magnetic disturbances are common and can substantially degrade yaw and overall attitude estimates. Accordingly, unless the environment is magnetically clean (i.e., with minimal metal and electromagnetic interference), the fused orientation output is treated as unreliable.
+That assumption is much weaker for arbitrary object-like motion. The sensor may be attached to diverse bodies with different couplings, accelerations, and contact events. We consequently use direction classification as a diagnostic formulation. It removes velocity magnitude as a confound, produces interpretable motion primitives, and lets us increase motion complexity in a controlled way. It does not claim that a discretized class label is the final form of object tracking.
 
-The Allan variance analysis {% cite AllanVarianceRos %} (shown in [Figure 2](#fig-imu-allan)) reveals clear axis-dependent behavior in the accelerometer: the **z-axis** exhibits substantially **higher noise** and **greater bias instability** than the x- and y-axes. This asymmetry must be considered when designing motion recovery algorithms.
+## Hardware and Robot-Assisted Data Collection
 
-<figure id="fig-imu-allan" style="margin: 1.5em auto;">
-  <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
-    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/acceleration.png" alt="Allan variance of accelerometer" style="max-width: 100%; height: auto;">
-    </div>
-    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/gyro.png" alt="Allan variance of gyroscope" style="max-width: 100%; height: auto;">
-    </div>
-  </div>
-  <figcaption><strong>Figure 2.</strong> Allan-variance curves of the WT901WIFI accelerometer (left) and gyroscope (right).</figcaption>
-</figure>
-
-In summary, the WT901WIFI is a practical low-cost IMU (approximately 100 RMB) that provides convenient 100 Hz measurements for dynamic scene data collection. While it does not match the precision of premium devices (e.g., Xsens Movella Dot or Noitom sensors), it offers a favorable cost-performance trade-off for large-scale experimentation.
-
-## Problem Formulation and Data Collection Protocol
-
-This report focuses on investigating whether informative velocity cues can be reliably inferred from IMU signals, with an emphasis on velocity *direction* as a diagnostic intermediate target. To obtain scalable and reproducible training data, we adopt a robot-assisted pipeline. Specifically, an IMU is mounted on the end-effector of an xArm6 using custom 3D-printed fixtures. The robot executes predefined motion programs, enabling collection of inertial sequences with controlled kinematics for model training and evaluation.
-
-At this stage, the central technical question is whether a single low-cost IMU provides sufficient information to infer motion in our setting. Prior studies, such as RoNIN {% cite ronin %} and TartanIMU {% cite tartanimu %}, have demonstrated promising results, but under specific assumptions:
-- These methods learn a mapping from a window of inertial data to the average velocity of that window, i.e., $$[\boldsymbol{\omega}_{1:t},\mathbf{a}_{1:t}] \rightarrow \bar{\mathbf{v}}$$. From a physical perspective, however, integrating acceleration over a finite window yields a velocity increment $$\Delta \mathbf{v}$$ rather than an absolute velocity. Some argue that the model learns a data-driven mapping from IMU sequences to velocity that is valid within the **distribution of motions** seen during training, and this process can be viewed as "locally anchored velocity estimation".
-- Existing benchmark platforms (e.g., pedestrians, legged robots, and mobile robots) often exhibit relatively structured motion statistics, such as quasi-periodic gait patterns. This structural regularity can implicitly support velocity regression, yet the effective motion distribution assumptions are rarely quantified explicitly.
-- In contrast, our target setting involves arbitrary object motions, because the IMU may be attached to diverse objects with distinct and non-periodic dynamics. This regime is less explored in prior work. Therefore, instead of directly regressing velocity magnitude and direction jointly, we first study **velocity direction classification** to improve robustness against sensor noise and bias.
-
-## Method and Experiments
-
-This section presents the model design and a staged experimental study. And we have prepared the following self-collected datasets with the xArm6 robot arm:
-
-- **AXIS-7** <!--(original: 0121)-->: 7-class axis-aligned motion dataset.
-- **DIR27-L** <!--(original: 0123)-->: 27-class directional dataset, larger split (200 sequences/class).
-- **DIR27-S** <!--(original: 0126)-->: 27-class directional dataset, smaller split (100 sequences/class).
-- **POLY-27** <!--(new polyline set)-->: 27-class zigzag/polyline motion dataset.
-
-The xArm6 recording procedures for linear and polyline trajectories are shown in [Figure 3](#fig-recording).
+To obtain repeatable kinematic supervision without the ambiguity of freehand motion, we mount a WitMotion WT901WIFI on the end-effector of a UFACTORY xArm6 using a custom 3D-printed fixture. The robot executes predefined programs while the sensor records raw 3-axis acceleration and 3-axis angular velocity at 100 Hz. Software synchronization aligns the robot and IMU streams; the sensor center and axes are registered to the configured gripper frame.
 
 <figure id="fig-recording" style="margin: 1.5em auto;">
   <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
     <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/linear.gif" alt="xArm6 linear trajectory recording" style="max-width: 100%; height: auto;">
-      <div style="margin-top: 0.5em;"><em>(a) Linear trajectory recording</em></div>
+      <img src="/assets/img/projects/imu-pose/linear.gif" alt="xArm6 recording a straight-line trajectory" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(a) Straight-line motion</em></div>
     </div>
     <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/polyline.gif" alt="xArm6 polyline trajectory recording" style="max-width: 100%; height: auto;">
-      <div style="margin-top: 0.5em;"><em>(b) Polyline trajectory recording</em></div>
+      <img src="/assets/img/projects/imu-pose/polyline.gif" alt="xArm6 recording a waypoint-driven polyline trajectory" style="max-width: 100%; height: auto;">
+      <div style="margin-top: 0.5em;"><em>(b) Waypoint-driven polyline motion</em></div>
     </div>
   </div>
-  <figcaption><strong>Figure 3.</strong> Robot-assisted IMU data recording with xArm6 under two motion programs: straight-line motion (left) and waypoint-driven polyline motion (right).</figcaption>
+  <figcaption><strong>Figure 2.</strong> Robot-assisted inertial data collection under homogeneous and non-homogeneous motion programs.</figcaption>
 </figure>
 
-### Backbone: iTransformer
+Although the WT901WIFI is a 9-axis device, we do not rely on its fused orientation in typical environments. That estimate depends strongly on magnetometer observations and can be corrupted by nearby metal or electronic equipment. Instead, with the fixed IMU-to-gripper alignment and a level robot base, we compute gravity in the body frame from robot forward kinematics and compensate it from the acceleration signal. The learned model therefore uses the IMU as a practical low-cost 6-axis sensor. At roughly 100 RMB, it is attractive for large-scale experiments even though it cannot match premium motion-capture hardware.
 
-IMU windows are multivariate time-series signals. To model temporal dependencies while maintaining Transformer scalability, we build our backbone on iTransformer {% cite iTransformer %}, where time points from each series are embedded as variate tokens. Following RoNIN {% cite ronin %}, we additionally use a 1D convolution-based embedding module for raw inertial features and add learnable position encoding on the temporal domain. The full architecture is shown in [Figure 4](#fig-arch).
+The hardware also constrains the learning problem. We perform no explicit bias removal beyond gravity compensation. Preliminary Allan-variance analysis {% cite AllanVarianceRos %} reveals axis-dependent noise and bias instability, especially on the accelerometer's $$z$$ axis. This makes imperfect gravity removal and continuous regression particularly sensitive along the vertical direction, a pattern that reappears in the classification errors.
+
+<figure id="fig-imu-allan" style="margin: 1.5em auto;">
+  <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/acceleration.png" alt="Allan variance of accelerometer measurements" style="max-width: 100%; height: auto;">
+    </div>
+    <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
+      <img src="/assets/img/projects/imu-pose/gyro.png" alt="Allan variance of gyroscope measurements" style="max-width: 100%; height: auto;">
+    </div>
+  </div>
+  <figcaption><strong>Figure 3.</strong> Allan-variance curves for the WT901WIFI accelerometer (left) and gyroscope (right). The accelerometer exhibits clear axis-dependent behavior.</figcaption>
+</figure>
+
+## Formulation and Baseline
+
+Each example is a 100-frame window ($$W=100$$) of body-frame angular velocity $$\boldsymbol{\omega}_{k:k+W}$$ and gravity-compensated acceleration $$\mathbf{a}_{k:k+W}$$. We learn
+
+$$
+\mathcal{F}: [\boldsymbol{\omega}_{k:k+W}, \mathbf{a}_{k:k+W}] \rightarrow c, \qquad c \in \mathcal{C},
+$$
+
+where $$\mathcal{C}$$ is a set of discrete velocity-direction bins. Labels are derived from xArm6 motion in the end-effector body frame. Sequences are divided into train/validation/test partitions at a ratio of 0.8/0.1/0.1 **before** window extraction, preventing direct leakage between overlapping windows.
+
+Our baseline is iTransformer {% cite iTransformer %} with a lightweight 1D-convolutional embedding of the raw six-channel signal, learnable temporal position encoding, and a classification head. This is intentionally a capable but conventional sequence model: the project evaluates inertial sensing limits rather than proposes a new network architecture.
 
 <figure id="fig-arch" style="text-align: center; margin: 1.5em auto;">
-  <img src="/assets/img/projects/imu-pose/arch.svg" alt="Arch" style="max-width: 75%; height: auto;">
-  <figcaption><strong>Figure 4.</strong> Overview of the proposed inertial-motion network based on iTransformer with 1D convolutional embedding and learnable position encoding.</figcaption>
+  <img src="/assets/img/projects/imu-pose/arch.svg" alt="iTransformer-based inertial-motion classification architecture" style="max-width: 75%; height: auto;">
+  <figcaption><strong>Figure 4.</strong> iTransformer-based baseline. A convolutional embedding processes raw inertial signals before temporal encoding and velocity-direction classification.</figcaption>
 </figure>
 
-We train and evaluate the model on the public RoNIN dataset {% cite ronin %} as a proof-of-capability benchmark. RoNIN contains large-scale human inertial trajectories, and this stage is intended to verify whether the proposed architecture can learn meaningful motion information from IMU streams. We compare against representative baselines and report absolute trajectory error (ATE) and relative trajectory error (RTE) in meters (lower is better). This benchmark is independent of our robot-collected datasets; unless stated otherwise, all experiments below are trained and evaluated on our self-collected data only.
+As a capacity sanity check, we also evaluate the backbone on the public RoNIN inertial-odometry benchmark {% cite ronin %}. This experiment is separate from the robot-collected classification study: it only checks that the chosen sequence model can extract useful information from IMU streams without extensive task-specific tuning. ATE and RTE are in meters; lower is better.
 
-|                | RONIN-ResNet {% cite ronin %} | CTIN {% cite rao2022ctin %} | iMoT {% cite nguyen2025imot %} | DiffusionIMU {% cite diffusionimu %} | M2EIT {% cite M2EIT %} |   Ours    |
-| :------------: | :---------------------------: | --------------------------- | :----------------------------: | :----------------------------------: | :--------------------: | :-------: |
-|  Seen ATE/RTE  |           3.70/2.78           | 4.62/2.81                   |           3.78/2.68            |              3.64/2.72               |       3.58/2.76        | 3.80/2.75 |
-| Unseen ATE/RTE |           5.48/4.56           | 5.61/4.48                   |           5.31/4.39            |              5.27/4.31               |       5.19/4.57        | 5.47/4.61 |
+| Method | RONIN-ResNet {% cite ronin %} | CTIN {% cite rao2022ctin %} | iMoT {% cite nguyen2025imot %} | DiffusionIMU {% cite diffusionimu %} | M2EIT {% cite M2EIT %} | Ours |
+| :-- | :--: | :--: | :--: | :--: | :--: | :--: |
+| Seen ATE/RTE | 3.70/2.78 | 4.62/2.81 | 3.78/2.68 | 3.64/2.72 | 3.58/2.76 | 3.80/2.75 |
+| Unseen ATE/RTE | 5.48/4.56 | 5.61/4.48 | 5.31/4.39 | 5.27/4.31 | 5.19/4.57 | 5.47/4.61 |
 
-Although the proposed model does not yet achieve state-of-the-art performance, the results indicate competitive accuracy and, more importantly, validate the feasibility of our design. We emphasize that this benchmark is used as a proof-of-capability study; exhaustive hyperparameter tuning was intentionally not performed at this stage.
+## Progressive Evaluation: What the Sensor Can Recover
 
-### Problem Formulation: Velocity Direction Classification
+We collected four robot datasets spanning approximately 25.5 hours and progressively increasing motion complexity.
 
-Rather than directly regressing continuous velocity vectors, we formulate the problem as a classification task over discretized motion directions. Given a temporal window of IMU measurements consisting of angular velocity $$\boldsymbol{\omega}_{k:k+W}$$ and linear acceleration $$\mathbf{a}_{k:k+W}$$ (where $$W=100$$ frames), we aim to learn a mapping:
-$$\mathcal{F}: [\boldsymbol{\omega}_{k:k+W}, \mathbf{a}_{k:k+W}] \rightarrow c \in \mathcal{C}$$
-where $$c$$ is a discrete direction class and $$\mathcal{C}$$ is the set of predefined directional bins.
+| Dataset | Motion and labels | Scale |
+| :-- | :-- | :-- |
+| **AXIS-7** | $$\pm x, \pm y, \pm z$$ and static homogeneous motion | ~500 sequences/class; ~6 h |
+| **DIR27-L** | 27 body-frame directions, $$v_i \in \{-1,0,1\}$$ | 200 sequences/class; ~7.5 h |
+| **DIR27-S** | Same 27 directions under a separate condition | 100 sequences/class; ~4 h |
+| **POLY-27** | Waypoint-driven, non-homogeneous polylines | 200 sequences/class; ~8 h |
 
-This classification-based approach offers several advantages: (1) it provides interpretable motion primitives, (2) it reduces sensitivity to velocity magnitude variations, and (3) it enables systematic evaluation of model generalization across motion complexity levels. We design a progressive experimental protocol with three phases of increasing complexity.
+Here a *condition* includes the motion program, initial pose, fixture coupling, sensor state, and recording context. For AXIS-7 and DIR27, the robot begins each segment from diverse orientations. These rotations preserve body-frame labels while varying gravity projection and orientation-dependent artifacts, testing whether the model learns motion rather than trivial pose cues. Unless noted otherwise, training uses raw six-channel windows, batch size 1024, 10 epochs, and one GeForce RTX 3090 GPU, with no per-channel normalization or extensive hyperparameter search.
 
-#### Phase 1: Axis-Aligned Motion Classification
+### Phase 1 — Axis-Aligned Homogeneous Motion
 
-**Objective.** We begin with the simplest motion scenario: straight-line translations along the three principal body axes. The task is to classify 7 motion primitives: positive and negative directions along $$x$$, $$y$$, and $$z$$ axes, plus a static (no-motion) class.
-
-**Dataset characteristics.** The AXIS-7 dataset contains approximately 500 sequences for each class (~5 hours total). To diversify conditions, we apply diverse initial rotations before each motion segment: both rotations around x-axis (in-plane) and rotation around the z-axis (out-of-plane) rotations are randomized, while orientation remains fixed during each segment. Since direction labels are defined in the body frame, this primarily perturbs the gravity projection and other orientation-dependent artifacts in the raw IMU streams, providing a sanity check on gravity compensation and robustness to such effects.
-
-**Preprocessing pipeline.** Raw IMU streams are segmented into consecutive fixed 100-frame windows. Each window contains body-frame angular velocity and linear acceleration. A critical preprocessing step is gravity compensation: leveraging the fixed IMU-to-gripper alignment (assumed from the fixture design) and assuming a level robot base, we compute the gravity vector in the body frame via forward kinematics and subtract it from raw acceleration measurements.
-
-**Results.** The model achieves 95.82% accuracy and 0.9581 weighted F1-score on the held-out test set. The confusion matrix shows the dominant residual errors occur between opposite directions on the same axis, with the most prominent confusion on the $$\pm z$$ axis (i.e., $$+z$$ vs. $$-z$$), while other classes are largely well separated.
+On AXIS-7, the classifier reaches **95.82% accuracy** and **0.9581 weighted F1**. This demonstrates that one low-cost IMU contains sufficient information to recognize coarse translational primitives when motion is straight, homogeneous, and accurately gravity-compensated. The remaining errors are primarily between opposite directions on the same axis, particularly $$+z$$ and $$-z$$, consistent with the sensor asymmetry observed above.
 
 <figure id="fig-confusion-phase1" style="text-align: center; margin: 1.5em auto;">
-  <img src="/assets/img/projects/imu-pose/confussion_matrix_5_1.png" alt="Confusion matrix for Phase 1 axis-aligned classification" style="max-width: 50%; height: auto;">
-  <figcaption><strong>Figure 5.</strong> Confusion matrix on the AXIS-7 held-out test set. Residual errors are concentrated between opposite directions on the same axis, with the most prominent confusion on the $$\pm z$$ axis.</figcaption>
+  <img src="/assets/img/projects/imu-pose/confussion_matrix_5_1.png" alt="AXIS-7 confusion matrix" style="max-width: 50%; height: auto;">
+  <figcaption><strong>Figure 5</strong> AXIS-7 confusion matrix. Residual errors cluster around opposite directions on the same axis, most visibly $\pm z$.</figcaption>
 </figure>
 
-#### Phase 2: Multi-Directional Motion and Generalization Analysis
+### Phase 2 — Fine-Grained Directions and Cross-Condition Robustness
 
-**Objective.** We expand the label space to 27 directions by quantizing each velocity component as $$\{-1, 0, 1\}$$, yielding all combinations $$(v_x, v_y, v_z) \in \{-1,0,1\}^3$$. This setting tests the model's ability to distinguish fine-grained directional differences.
+For DIR27, each velocity component is quantized to $$\{-1,0,1\}$$, yielding 27 direction classes. Matched-condition results remain strong: **92.23%** on DIR27-L, **88.84%** on DIR27-S, and **91.84%** when the two datasets are merged for matched-condition training and testing.
 
-**Dataset characteristics.** We collect two datasets under identical protocols: DIR27-L (200 sequences/class, ~7.5 hours) and DIR27-S (100 sequences/class, ~4 hours). Both incorporate the same orientation augmentation strategy as Phase 1. The dual-dataset design enables systematic evaluation of cross-dataset generalization.
-
-**Intra-dataset performance.** When training and testing on the same dataset (80/20 split), the model achieves 92.23% and 88.84% accuracy on DIR27-L and DIR27-S, respectively. Training on the merged dataset (DIR27-L + DIR27-S) yields an accuracy of 91.84%, indicating that the model can effectively learn the 27-way classification when train and test distributions are matched.
-
-**Cross-dataset generalization failure.** However, cross-dataset evaluation reveals a severe generalization gap:
-- Training on DIR27-L and testing on DIR27-S: accuracy drops to 58.16%.
-- Training on DIR27-S and testing on DIR27-L: accuracy drops to 53.38%.
-
-[Figure 6](#fig-jump-detail) visualizes the confusion patterns for both transfer directions. Notably, the error structures are qualitatively similar, suggesting that the generalization failure is not due to one "bad" dataset split, but rather reflects fundamental distribution mismatch and insufficient statistical coverage. We hypothesize that the model may rely on dataset-specific artifacts (e.g., subtle differences in robot controller dynamics, sensor mounting variations, or environmental factors) rather than learning robust physical motion features.
+The central limitation appears when the condition changes. Training on DIR27-L and testing on DIR27-S falls to **58.16%**; the reverse transfer reaches only **53.38%**. Both confusion matrices show similar structures, indicating a systematic condition gap rather than one anomalous split. The model is likely using some condition-specific cues—controller response, mounting and fixture coupling, sensor state, or recording context—instead of fully invariant physical motion features. High matched-condition accuracy is therefore not sufficient evidence of robust physical understanding.
 
 <figure id="fig-jump-detail" style="margin: 1.5em auto;">
   <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
     <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/train0123_test0126.png" alt="Train on DIR27-L test on DIR27-S" style="max-width: 100%; height: auto;">
+      <img src="/assets/img/projects/imu-pose/train0123_test0126.png" alt="DIR27-L to DIR27-S transfer confusion matrix" style="max-width: 100%; height: auto;">
       <div style="margin-top: 0.5em;"><em>(a) Train DIR27-L, test DIR27-S</em></div>
     </div>
     <div style="flex: 1 1 420px; max-width: 48%; min-width: 320px; text-align: center;">
-      <img src="/assets/img/projects/imu-pose/train0126_test0123.png" alt="Train on DIR27-S test on DIR27-L" style="max-width: 100%; height: auto;">
+      <img src="/assets/img/projects/imu-pose/train0126_test0123.png" alt="DIR27-S to DIR27-L transfer confusion matrix" style="max-width: 100%; height: auto;">
       <div style="margin-top: 0.5em;"><em>(b) Train DIR27-S, test DIR27-L</em></div>
     </div>
   </div>
-  <figcaption><strong>Figure 6.</strong> Cross-dataset jump-case diagnostics. The two transfer directions exhibit similar error structures, supporting the hypothesis that data diversity and domain-robust training are both insufficient at the current stage.</figcaption>
+  <figcaption><strong>Figure 6.</strong> Cross-condition diagnostics for 27-way classification. Similar error structures in both directions support condition sensitivity rather than a defective split.</figcaption>
 </figure>
 
-**Rotation-equivariant augmentation failure.** To probe this failure mode, we evaluate a rotation-equivariant augmentation strategy inspired by RIO {% cite cao2022RIO %}. The principle is that rotated inertial inputs should correspond to rotated velocity labels, i.e., $$\left([\boldsymbol{\omega}_{k:k+100},\mathbf{a}_{k:k+100}],\bar{\mathbf{v}}\right)$$ and $$\left([\mathbf{R}\boldsymbol{\omega}_{k:k+100},\mathbf{R}\mathbf{a}_{k:k+100}],\mathbf{R}\bar{\mathbf{v}}\right)$$ should be equivalent training samples.
+We also tested rotation-equivariant augmentation inspired by RIO {% cite cao2022RIO %}: rotating an inertial window by $$\mathbf{R}$$ should rotate its direction label by the same transformation. In the real pipeline, the assumption does not hold cleanly. On AXIS-7, this augmentation reduces accuracy from 95.82% to 85.57%. A label-flip diagnostic that swaps $$+y$$ and $$-y$$ at evaluation reduces the corresponding F1 score by 24.7%. Sensor-axis bias, controller dynamics, and fixture coupling are all axis dependent, so ideal rigid-rotation augmentation is mismatched to the measured distribution.
 
-In our setting, this augmentation degrades performance rather than improving it. A likely explanation is that practical non-idealities (e.g., axis-dependent sensor bias and controller-induced dynamics in xArm6 velocity execution) violate strict rotational equivalence. As an additional diagnostic, we perform a label-flip test on AXIS-7 by swapping the $$+y/-y$$ labels at evaluation time; the F1 score on the y-axis classes drops by 24.7%, supporting the claim that the measured data distribution cannot be modeled as a simple rigid rotation of idealized inertial signals.
+### Phase 3 — Non-Homogeneous Polyline Motion
 
-#### Phase 3: Polyline (Zigzag) Trajectory Evaluation
+POLY-27 contains waypoint-driven trajectories for which the instantaneous velocity can change within a 100-frame window. A constant direction label is no longer available, so we use net displacement as a proxy target,
 
-**Objective.** To better approximate real trajectories with direction changes, we introduce waypoint-driven polyline motions. The IMU orientation remains fixed during each sequence, while instantaneous velocity direction changes over time.
+$$
+\mathbf{d}_{\text{net}} = \mathbf{p}_{k+W} - \mathbf{p}_k,
+$$
 
-**Dataset characteristics.** We collect the POLY-27 dataset with 200 sequences/class following zigzag trajectories. Motion commands are executed through the xArm6 Cartesian velocity control API.
+and assign its nearest directional bin. Accuracy drops to **49.2%**—well above 27-way random chance (3.7%), but far below the straight-line settings. The result exposes a mismatch between the target and the signal: net displacement discards the local direction changes within a window. In this regime, the single-label-window formulation becomes much less informative than the raw inertial sequence it summarizes.
 
-**Supervision strategy.** Because motion within one window is no longer strictly linear, we define the target as the net displacement vector from the first to the last frame in the window:
-$$\mathbf{d}_{\text{net}} = \mathbf{p}_{k+W} - \mathbf{p}_k$$
-We then map this net displacement to the nearest class among the 27 directional bins by computing:
-$$c^* = \arg\min_{c \in \mathcal{C}} \|\text{normalize}(\mathbf{d}_{\text{net}}) - \mathbf{v}_c\|_2$$
-where $$\mathbf{v}_c$$ is the unit direction vector for class $$c$$.
+## Takeaways and Next Steps
 
-**Results and analysis.** Test accuracy drops to 49.2%, far below the straight-line setting in Phases 1–2 (though still above random chance, 3.7% for 27 classes). This substantial performance degradation indicates that the single-label-per-window assumption becomes invalid when trajectories contain direction changes. In particular, the model trained on straight-line motions does not generalize to windows where the instantaneous velocity varies within the temporal window.
+The study establishes both the promise and the boundary of active inertial sensing with one low-cost IMU. Under controlled, homogeneous motion, the sensor can recover coarse ego-motion primitives reliably. Yet cross-condition transfer, idealized rotation augmentation, and non-homogeneous trajectories all reveal that the current formulation is not robust enough for practical object tracking.
 
-This failure highlights a critical limitation of the classification-based formulation: it assumes motion homogeneity within each window. For realistic trajectories with frequent direction changes, alternative approaches are needed, such as sequence-to-sequence modeling, multi-scale temporal modeling, or regression-based formulation.
+The most useful next directions are:
 
-## Conclusion
+- condition-invariant sensing and calibration that explicitly model bias, mounting, and controller effects;
+- adaptive or multi-scale temporal windows rather than a fixed 100-frame horizon;
+- dense per-frame direction prediction or sequence-to-sequence velocity modeling, replacing a single net-displacement label; and
+- fusion with visual observations or physics-informed constraints when the application requires full object trajectories.
 
-Axis-aligned experiments show that velocity-direction classification is feasible for constrained straight-line motions with controlled orientation and accurate gravity compensation (95.82% accuracy on AXIS-7). However, three observations indicate limited robustness for unconstrained object dynamics: (1) a large cross-dataset generalization gap in DIR27 transfer (58.16% and 53.38% accuracy for DIR27-L→DIR27-S and DIR27-S→DIR27-L), (2) failure of rotation-equivariant augmentation under real sensor and control non-idealities (a 24.7% y-axis F1-score drop in a diagnostic label-flip test), and (3) substantial performance degradation on polyline trajectories where a single window label is insufficient (49.2% accuracy on POLY-27).
-
-Overall, these findings suggest that discrete velocity-direction classification serves as a useful diagnostic intermediate target but is not a sufficiently stable endpoint for practical inertial object tracking. Future work should explore alternative supervision strategies (e.g., dense per-frame direction prediction or sequence-to-sequence velocity modeling), integration with visual observations, or physics-informed learning constraints. Due to practical constraints, we conclude this stage of the project with the hope that these insights will inform subsequent research in inertial-based dynamic scene understanding.
+Velocity-direction classification remains valuable as a controlled diagnostic target. Its failures clarify what a future inertial object-sensing system must solve before it can support reliable dynamic-scene understanding.
 
 ## References
 
