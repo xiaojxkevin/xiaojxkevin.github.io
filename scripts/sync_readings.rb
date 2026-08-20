@@ -192,7 +192,7 @@ def build_overview(note_index, index_rows)
               {% if r.code_url %}<a href="{{ r.code_url }}" target="_blank" rel="noopener">Code</a> {% endif %}
               {% if r.opt_url %}<a href="{{ r.opt_url }}" target="_blank" rel="noopener">Opt</a> {% endif %}
             </td>
-            <td>{% if r.need_revisit %}<span class="need-revisit">✓</span>{% endif %}</td>
+            <td>{% if r.need_revisit %}<span class="need-revisit"></span>{% endif %}</td>
           </tr>
         {% endfor %}
         </tbody>

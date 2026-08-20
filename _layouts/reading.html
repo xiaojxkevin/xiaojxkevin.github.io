@@ -160,9 +160,12 @@
         vertical-align: middle;
       }
       .readings-table .need-revisit, .readings-overview-table .need-revisit {
-        color: #27ae60;
-        font-weight: 700;
-        font-size: 1.1em;
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #e74c3c;
+        vertical-align: middle;
       }
       .back-link {
         display: inline-block;
@@ -255,7 +258,7 @@
               {% if r.code_url %}<a href="{{ r.code_url }}" target="_blank" rel="noopener">Code</a> {% endif %}
               {% if r.opt_url %}<a href="{{ r.opt_url }}" target="_blank" rel="noopener">Opt</a> {% endif %}
             </td>
-            <td>{% if r.need_revisit %}<span class="need-revisit">✓</span>{% endif %}</td>
+            <td>{% if r.need_revisit %}<span class="need-revisit"></span>{% endif %}</td>
           </tr>
         {% endfor %}
         </tbody>
