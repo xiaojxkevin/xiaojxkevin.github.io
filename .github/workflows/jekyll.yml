@@ -29,6 +29,7 @@ jobs:
         with:
           ruby-version: '3.1'
           bundler-cache: true
+          bundler-version: '4.0.7'
 
       - name: Generate readings collection
         run: ruby scripts/sync_readings.rb
