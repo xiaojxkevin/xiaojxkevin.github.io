@@ -54,6 +54,8 @@ collections:
   projects:
     output: true
     permalink: /projects/:title/
+  readings:
+    output: true
 
 plugins:
   - jekyll-remote-theme
@@ -84,3 +86,5 @@ exclude:
   - Dockerfile
   - docker-compose.yml
   - private
+  - _readings_src
+  - scripts

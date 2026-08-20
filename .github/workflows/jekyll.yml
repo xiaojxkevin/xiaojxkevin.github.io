@@ -20,12 +20,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
           bundler-cache: true
+
+      - name: Generate readings collection
+        run: ruby scripts/sync_readings.rb
 
       - name: Setup Pages
         id: pages

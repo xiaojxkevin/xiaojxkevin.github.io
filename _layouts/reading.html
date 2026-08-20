@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <title>{{ page.title }} | {{ site.title }}</title>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ page.description | default: site.description }}">
+
+    <link rel="icon" media="(prefers-color-scheme:dark)" href="{{ site.favicon_dark | relative_url }}?v={{ site.time | date: '%s' }}" type="image/png" />
+    <link rel="icon" media="(prefers-color-scheme:light)" href="{{ site.favicon | relative_url }}?v={{ site.time | date: '%s' }}" type="image/png" />
+    <script src="{{ '/assets/js/favicon-switcher.js' | relative_url }}" type="application/javascript"></script>
+
+    <link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin=anonymous>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    {% if site.font == "Sans Serif" %}
+    <link rel="stylesheet" href="{{ '/assets/css/font_sans_serif.css' | relative_url }}">
+    {% else %}
+    <link rel="stylesheet" href="{{ '/assets/css/font.css' | relative_url }}">
+    {% endif %}
+    {% if site.auto_dark_mode %}
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/publications.css' | relative_url }}">
+    {% else %}
+    <link rel="stylesheet" href="{{ '/assets/css/style-no-dark-mode.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/publications-no-dark-mode.css' | relative_url }}">
+    {% endif %}
+
+    <!-- MathJax for math rendering -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEscapes: true
+        },
+        svg: { fontCache: 'global' }
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <style>
+      .reading-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2em 1em;
+        display: flex;
+        gap: 2em;
+        align-items: flex-start;
+      }
+      .reading-sidebar {
+        flex: 0 0 220px;
+        position: sticky;
+        top: 2em;
+        font-size: 0.92rem;
+      }
+      .reading-sidebar h3 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #999;
+        margin: 0 0 0.6em;
+      }
+      .reading-sidebar ul {
+        list-style: none;
+        margin: 0 0 1.2em;
+        padding: 0;
+      }
+      .reading-sidebar li {
+        margin: 0.15em 0;
+      }
+      .reading-sidebar a {
+        text-decoration: none;
+        color: #333;
+      }
+      .reading-sidebar a:hover {
+        color: var(--global-theme-color, #002D72);
+      }
+      .reading-sidebar .active {
+        color: var(--global-theme-color, #002D72);
+        font-weight: 600;
+      }
+      .reading-content {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 780px;
+        line-height: 1.8;
+        font-size: 16px;
+      }
+      .reading-header {
+        margin-bottom: 2em;
+        border-bottom: 1px solid #e5e5e5;
+        padding-bottom: 1em;
+      }
+      .reading-header h1 {
+        font-size: 1.9em;
+        margin-bottom: 0.3em;
+      }
+      .reading-meta {
+        color: #666;
+        font-size: 0.9em;
+      }
+      .reading-meta a {
+        margin-right: 10px;
+      }
+      .reading-content img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1.5em auto;
+        border-radius: 8px;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+      }
+      .reading-content pre {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      .reading-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+        font-size: 0.92em;
+      }
+      .reading-content th, .reading-content td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        text-align: left;
+      }
+      .reading-content th {
+        background: #f4f4f4;
+      }
+      .reading-content blockquote {
+        border-left: 3px solid var(--global-theme-color, #002D72);
+        padding: 0.5em 1em;
+        margin: 1em 0;
+        background: #f9f9f9;
+        font-style: italic;
+      }
+      .revisit-badge {
+        background: #fde8e8;
+        color: #c0392b;
+        font-size: 0.7em;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      mark.revisit-mark {
+        background: #fde8e8;
+        color: #c0392b;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        vertical-align: middle;
+      }
+      .readings-table .need-revisit, .readings-overview-table .need-revisit {
+        color: #27ae60;
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 1em;
+        font-size: 0.95em;
+      }
+      .section-desc {
+        color: #666;
+        margin-bottom: 1.5em;
+      }
+      @media (max-width: 860px) {
+        .reading-wrap {
+          flex-direction: column;
+          gap: 1em;
+        }
+        .reading-sidebar {
+          flex: 1 1 auto;
+          position: static;
+          width: 100%;
+        }
+        .reading-sidebar ul {
+          display: inline;
+        }
+        .reading-sidebar li {
+          display: inline-block;
+          margin-right: 0.8em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reading-wrap">
+      <nav class="reading-sidebar">
+        <h3>Home</h3>
+        <ul>
+          <li><a href="{{ '/' | relative_url }}">Home</a></li>
+          <li><a href="{{ '/readings/' | relative_url }}"{% if page.is_overview %} class="active"{% endif %}>All Readings</a></li>
+        </ul>
+        <h3>Categories</h3>
+        <ul>
+          <li><a href="{{ '/readings/vla/' | relative_url }}"{% if page.category == 'VLA' %} class="active"{% endif %}>VLA</a></li>
+          <li><a href="{{ '/readings/policy/' | relative_url }}"{% if page.category == 'Policy' %} class="active"{% endif %}>Policy</a></li>
+          <li><a href="{{ '/readings/world-model/' | relative_url }}"{% if page.category == 'World-Model' %} class="active"{% endif %}>World-Model</a></li>
+          <li><a href="{{ '/readings/data/' | relative_url }}"{% if page.category == 'Data' %} class="active"{% endif %}>Data</a></li>
+        </ul>
+        <h3>Vault</h3>
+        <ul>
+          <li><a href="https://github.com/xiaojxkevin/policy_readings" target="_blank" rel="noopener">Source</a></li>
+        </ul>
+      </nav>
+
+      <div class="reading-content">
+      {% if page.is_overview %}
+      <div class="reading-header">
+        <h1>Robot Policy Readings</h1>
+        <div class="section-desc">A browsable mirror of the <a href="https://github.com/xiaojxkevin/policy_readings" target="_blank" rel="noopener">policy_readings</a> Obsidian vault, grouped by topic.</div>
+      </div>
+      {{ content }}
+
+      {% elsif page.is_index %}
+      <div class="reading-header">
+        <h1>{{ page.title }}</h1>
+        <div class="section-desc">Papers in the {{ page.category }} category. <a href="https://github.com/xiaojxkevin/policy_readings">source vault</a></div>
+      </div>
+      <div class="readings-table">
+      {% assign cat_key = page.category | downcase %}
+      {% assign rows = site.data.readings_index[cat_key] %}
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Alias</th>
+            <th>Year</th>
+            <th>arXiv</th>
+            <th>Tags</th>
+            <th>Links</th>
+            <th>Need Revisit</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a href="{{ '/readings/' | append: cat_key | append: '/' | append: r.slug | append: '/' | relative_url }}">{{ r.title }}</a></td>
+            <td>{{ r.alias }}</td>
+            <td>{{ r.year }}</td>
+            <td>{{ r.arxiv_number }}</td>
+            <td>{{ r.tags }}</td>
+            <td>
+              {% if r.arxiv_url %}<a href="{{ r.arxiv_url }}" target="_blank" rel="noopener">arXiv</a> {% endif %}
+              {% if r.code_url %}<a href="{{ r.code_url }}" target="_blank" rel="noopener">Code</a> {% endif %}
+              {% if r.opt_url %}<a href="{{ r.opt_url }}" target="_blank" rel="noopener">Opt</a> {% endif %}
+            </td>
+            <td>{% if r.need_revisit %}<span class="need-revisit">✓</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+
+      {% else %}
+      <div class="reading-header">
+        <h1>{{ page.title }}</h1>
+        <div class="reading-meta">
+          {% if page.alias %}<span><i class="far fa-tag"></i> {{ page.alias }}</span> &nbsp;{% endif %}
+          {% if page.year %}<span><i class="far fa-calendar-alt"></i> {{ page.year }}</span> &nbsp;{% endif %}
+          {% if page.arxiv_number %}<span><i class="ai ai-arxiv"></i> {{ page.arxiv_number }}</span> &nbsp;{% endif %}
+          {% if page.need_revisit %}<span class="revisit-badge">needs revisit</span>{% endif %}
+          <br>
+          {% if page.arxiv_url %}<a href="{{ page.arxiv_url }}" target="_blank" rel="noopener"><i class="ai ai-arxiv"></i> arXiv</a>{% endif %}
+          {% if page.code_url %}<a href="{{ page.code_url }}" target="_blank" rel="noopener"><i class="fab fa-github"></i> Code</a>{% endif %}
+          {% if page.opt_url %}<a href="{{ page.opt_url }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Project</a>{% endif %}
+        </div>
+      </div>
+
+      {{ content }}
+
+      {% endif %}
+
+      <br>
+      <hr>
+      <p><small><a href="{{ '/' | relative_url }}">&larr; Home</a> · <a href="{{ '/readings/' | relative_url }}">All Readings</a></small></p>
+      </div>
+    </div>
+  </body>
+</html>

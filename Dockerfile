@@ -19,4 +19,4 @@ RUN bundle install --jobs 4 --retry 3
 
 EXPOSE 4000
 
-CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--watch", "--livereload"]
+CMD ["bash", "-c", "ruby scripts/sync_readings.rb && bundle exec jekyll serve --host 0.0.0.0 --watch --livereload"]
