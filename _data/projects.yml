@@ -1,4 +1,9 @@
 main:
+  - title: 'Cloth Folding with $\pi_{0.5}$: DAgger and End-Effector Auxiliary Learning'
+    description: Real-robot cloth folding with corrective data and end-effector pose supervision on dual PiPER arms.
+    image: ./assets/img/projects/cloth-folding/teaser.jpg
+    page: /projects/cloth-folding/
+
   - title: "Active Inertial Sensing for Ego-Centric Motion Recovery"
     description: A feasibility study on IMU-based motion recovery, focusing on velocity-direction classification.
     image: ./assets/img/projects/imu-pose/teaser.svg

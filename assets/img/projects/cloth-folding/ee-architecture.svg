@@ -1,0 +1,268 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1570" viewBox="0 0 1400 1570" role="img" aria-labelledby="title desc">
+<title id="title">EE auxiliary learning: training and inference</title>
+<desc id="desc">Four masked token groups share an action expert during training. Joint actions use all camera views; each auxiliary EE group directly attends to its assigned view. Inference caches the observation prefix and denoises only joint actions.</desc>
+<defs><pattern id="noise" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="4" height="9" fill="#ffe69a"/></pattern><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#222"/></marker></defs>
+<rect width="1400" height="1570" fill="white"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#111" text-anchor="middle">
+<text x="700" y="48" font-size="30">Training</text>
+<rect x="1020" y="18" width="135" height="40" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<text x="1087" y="44" font-size="15">visibility mask</text>
+<rect x="1180" y="17" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="1202.5" y="46" font-size="19"></text>
+<text x="1290" y="36" font-size="16">EE pose</text>
+<text x="1290" y="57" font-size="16">tokens</text>
+<rect x="1180" y="76" width="45" height="45" rx="7" fill="#ffdd61" stroke="#c79500" stroke-width="2.5"/>
+<text x="1202.5" y="105" font-size="19"></text>
+<text x="1290" y="104" font-size="16">Joint actions</text>
+<text x="700" y="90" font-size="18">Shared action expert · separate token groups and output projections</text>
+<rect x="35" y="125" width="310" height="302" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="117" y="148" width="45" height="45" rx="7" fill="#ffdd61" stroke="#c79500" stroke-width="2.5"/>
+<text x="139.5" y="177" font-size="19">a₁</text>
+<text x="190" y="177" font-size="24">⋯</text>
+<rect x="218" y="148" width="45" height="45" rx="7" fill="#ffdd61" stroke="#c79500" stroke-width="2.5"/>
+<text x="240.5" y="177" font-size="19">aₕ</text>
+<rect x="53" y="211" width="274" height="60" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="190" y="249" font-size="23">Action expert</text>
+<rect x="117" y="288" width="45" height="45" rx="7" fill="#ffe799" stroke="none" stroke-width="2.5"/>
+<text x="139.5" y="317" font-size="19">a₁</text>
+<text x="190" y="317" font-size="24">⋯</text>
+<rect x="218" y="288" width="45" height="45" rx="7" fill="#ffe799" stroke="none" stroke-width="2.5"/>
+<text x="240.5" y="317" font-size="19">aₕ</text>
+<text x="190" y="363" font-size="18">All views + text / state</text>
+<text x="190" y="393" font-size="21">Joint actions</text>
+<text x="190" y="452" font-size="18">Joint-action sequence</text>
+<text x="190" y="478" font-size="16">Loss weight: 1.0</text>
+<rect x="375" y="125" width="310" height="302" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="457" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="479.5" y="177" font-size="19">ℓ₁</text>
+<text x="530" y="177" font-size="24">⋯</text>
+<rect x="558" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="580.5" y="177" font-size="19">ℓₕ</text>
+<rect x="393" y="211" width="274" height="60" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="530" y="249" font-size="23">Action expert</text>
+<rect x="457" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="479.5" y="317" font-size="19">ℓ₁</text>
+<text x="530" y="317" font-size="24">⋯</text>
+<rect x="558" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="580.5" y="317" font-size="19">ℓₕ</text>
+<text x="530" y="363" font-size="18">Left wrist + text / state</text>
+<text x="530" y="393" font-size="21">Left EE auxiliary</text>
+<text x="530" y="452" font-size="18">Relative pose · 6D</text>
+<text x="530" y="478" font-size="16">Loss weight: 0.5</text>
+<rect x="715" y="125" width="310" height="302" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="797" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="819.5" y="177" font-size="19">r₁</text>
+<text x="870" y="177" font-size="24">⋯</text>
+<rect x="898" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="920.5" y="177" font-size="19">rₕ</text>
+<rect x="733" y="211" width="274" height="60" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="870" y="249" font-size="23">Action expert</text>
+<rect x="797" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="819.5" y="317" font-size="19">r₁</text>
+<text x="870" y="317" font-size="24">⋯</text>
+<rect x="898" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="920.5" y="317" font-size="19">rₕ</text>
+<text x="870" y="363" font-size="18">Right wrist + text / state</text>
+<text x="870" y="393" font-size="21">Right EE auxiliary</text>
+<text x="870" y="452" font-size="18">Relative pose · 6D</text>
+<text x="870" y="478" font-size="16">Loss weight: 0.5</text>
+<rect x="1055" y="125" width="310" height="302" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="1137" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="1159.5" y="177" font-size="19">e₁</text>
+<text x="1210" y="177" font-size="24">⋯</text>
+<rect x="1238" y="148" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="1260.5" y="177" font-size="19">eₕ</text>
+<rect x="1073" y="211" width="274" height="60" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="1210" y="249" font-size="23">Action expert</text>
+<rect x="1137" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="1159.5" y="317" font-size="19">e₁</text>
+<text x="1210" y="317" font-size="24">⋯</text>
+<rect x="1238" y="288" width="45" height="45" rx="7" fill="#c1d9ef" stroke="none" stroke-width="2.5"/>
+<text x="1260.5" y="317" font-size="19">eₕ</text>
+<text x="1210" y="363" font-size="18">Head view + text / state</text>
+<text x="1210" y="393" font-size="21">Dual EE auxiliary</text>
+<text x="1210" y="452" font-size="18">Absolute poses · 18D</text>
+<text x="1210" y="478" font-size="16">Loss weight: 0.01</text>
+<text x="700" y="513" font-size="17">Solid tokens: supervised targets · Pale tokens: noised inputs · EE labels come from forward kinematics</text>
+<path d="M25 540H1375" stroke="#888" stroke-width="1.5"/>
+<text x="700" y="584" font-size="30">Inference</text>
+<rect x="210" y="610" width="330" height="185" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="232" y="639" width="286" height="57" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="375" y="675" font-size="22">Vision-language prefix</text>
+<rect x="269" y="716" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="291.5" y="745" font-size="19">H</text>
+<rect x="349" y="716" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="371.5" y="745" font-size="19">L</text>
+<rect x="429" y="716" width="45" height="45" rx="7" fill="#9fc5e8" stroke="#307abd" stroke-width="2.5"/>
+<text x="451.5" y="745" font-size="19">R</text>
+<text x="375" y="826" font-size="19">1. Encode observations + text / state</text>
+<path d="M554 711H755" stroke="#222" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="652" y="684" font-size="21">KV cache</text>
+<rect x="772" y="610" width="325" height="185" rx="12" fill="none" stroke="#808080" stroke-width="1.7" stroke-dasharray="7 6"/>
+<rect x="861" y="625" width="45" height="45" rx="7" fill="#ffdd61" stroke="#c79500" stroke-width="2.5"/>
+<text x="883.5" y="654" font-size="19">a₁</text>
+<text x="934" y="654" font-size="24">⋯</text>
+<rect x="962" y="625" width="45" height="45" rx="7" fill="#ffdd61" stroke="#c79500" stroke-width="2.5"/>
+<text x="984.5" y="654" font-size="19">aₕ</text>
+<rect x="790" y="684" width="289" height="50" rx="12" fill="none" stroke="#808080" stroke-width="1.7"/>
+<text x="934" y="716" font-size="22">Action expert</text>
+<rect x="861" y="744" width="45" height="45" rx="7" fill="url(#noise)" stroke="none" stroke-width="2.5"/>
+<text x="883.5" y="773" font-size="19">a₁</text>
+<text x="934" y="773" font-size="24">⋯</text>
+<rect x="962" y="744" width="45" height="45" rx="7" fill="url(#noise)" stroke="none" stroke-width="2.5"/>
+<text x="984.5" y="773" font-size="19">aₕ</text>
+<text x="934" y="826" font-size="19">2. Denoise joint actions</text>
+<text x="1235" y="682" font-size="20">No EE tokens</text>
+<text x="1235" y="711" font-size="20">at inference</text>
+<path d="M25 860H1375" stroke="#888" stroke-width="1.5"/>
+<text x="700" y="907" font-size="30">Attention mask · direct token visibility</text>
+<text x="700" y="942" font-size="19">Rows: queries (reader) · Columns: keys / values (visible tokens)</text>
+<text x="316.0" y="990" font-size="17">Head</text>
+<text x="428.0" y="990" font-size="17">Left wrist</text>
+<text x="540.0" y="990" font-size="17">Right wrist</text>
+<text x="652.0" y="990" font-size="17">Text / state</text>
+<text x="764.0" y="990" font-size="17">Joint action</text>
+<text x="876.0" y="990" font-size="17">Left EE</text>
+<text x="988.0" y="990" font-size="17">Right EE</text>
+<text x="1100.0" y="990" font-size="17">Dual EE</text>
+<text x="240" y="1043" font-size="19" text-anchor="end">Head</text>
+<rect x="260" y="1010" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="316.0" y="1043" font-size="19" fill="#111">1</text>
+<rect x="372" y="1010" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="428.0" y="1043" font-size="19" fill="#111">1</text>
+<rect x="484" y="1010" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="540.0" y="1043" font-size="19" fill="#111">1</text>
+<rect x="596" y="1010" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1043" font-size="19" fill="#111">1</text>
+<rect x="708" y="1010" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1043" font-size="19" fill="#999">0</text>
+<rect x="820" y="1010" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1043" font-size="19" fill="#999">0</text>
+<rect x="932" y="1010" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1043" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1010" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1043" font-size="19" fill="#999">0</text>
+<text x="240" y="1096" font-size="19" text-anchor="end">Left wrist</text>
+<rect x="260" y="1063" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="316.0" y="1096" font-size="19" fill="#111">1</text>
+<rect x="372" y="1063" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="428.0" y="1096" font-size="19" fill="#111">1</text>
+<rect x="484" y="1063" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="540.0" y="1096" font-size="19" fill="#111">1</text>
+<rect x="596" y="1063" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1096" font-size="19" fill="#111">1</text>
+<rect x="708" y="1063" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1096" font-size="19" fill="#999">0</text>
+<rect x="820" y="1063" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1096" font-size="19" fill="#999">0</text>
+<rect x="932" y="1063" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1096" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1063" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1096" font-size="19" fill="#999">0</text>
+<text x="240" y="1149" font-size="19" text-anchor="end">Right wrist</text>
+<rect x="260" y="1116" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="316.0" y="1149" font-size="19" fill="#111">1</text>
+<rect x="372" y="1116" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="428.0" y="1149" font-size="19" fill="#111">1</text>
+<rect x="484" y="1116" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="540.0" y="1149" font-size="19" fill="#111">1</text>
+<rect x="596" y="1116" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1149" font-size="19" fill="#111">1</text>
+<rect x="708" y="1116" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1149" font-size="19" fill="#999">0</text>
+<rect x="820" y="1116" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1149" font-size="19" fill="#999">0</text>
+<rect x="932" y="1116" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1149" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1116" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1149" font-size="19" fill="#999">0</text>
+<text x="240" y="1202" font-size="19" text-anchor="end">Text / state</text>
+<rect x="260" y="1169" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="316.0" y="1202" font-size="19" fill="#111">1</text>
+<rect x="372" y="1169" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="428.0" y="1202" font-size="19" fill="#111">1</text>
+<rect x="484" y="1169" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="540.0" y="1202" font-size="19" fill="#111">1</text>
+<rect x="596" y="1169" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1202" font-size="19" fill="#111">1</text>
+<rect x="708" y="1169" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1202" font-size="19" fill="#999">0</text>
+<rect x="820" y="1169" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1202" font-size="19" fill="#999">0</text>
+<rect x="932" y="1169" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1202" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1169" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1202" font-size="19" fill="#999">0</text>
+<text x="240" y="1255" font-size="19" text-anchor="end">Joint action</text>
+<rect x="260" y="1222" width="112" height="53" fill="#ffdd61" stroke="#b8b8b8"/>
+<text x="316.0" y="1255" font-size="19" fill="#111">1</text>
+<rect x="372" y="1222" width="112" height="53" fill="#ffdd61" stroke="#b8b8b8"/>
+<text x="428.0" y="1255" font-size="19" fill="#111">1</text>
+<rect x="484" y="1222" width="112" height="53" fill="#ffdd61" stroke="#b8b8b8"/>
+<text x="540.0" y="1255" font-size="19" fill="#111">1</text>
+<rect x="596" y="1222" width="112" height="53" fill="#ffdd61" stroke="#b8b8b8"/>
+<text x="652.0" y="1255" font-size="19" fill="#111">1</text>
+<rect x="708" y="1222" width="112" height="53" fill="#ffdd61" stroke="#b8b8b8"/>
+<text x="764.0" y="1255" font-size="19" fill="#111">1</text>
+<rect x="820" y="1222" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1255" font-size="19" fill="#999">0</text>
+<rect x="932" y="1222" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1255" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1222" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1255" font-size="19" fill="#999">0</text>
+<text x="240" y="1308" font-size="19" text-anchor="end">Left EE</text>
+<rect x="260" y="1275" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="316.0" y="1308" font-size="19" fill="#999">0</text>
+<rect x="372" y="1275" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="428.0" y="1308" font-size="19" fill="#111">1</text>
+<rect x="484" y="1275" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="540.0" y="1308" font-size="19" fill="#999">0</text>
+<rect x="596" y="1275" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1308" font-size="19" fill="#111">1</text>
+<rect x="708" y="1275" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1308" font-size="19" fill="#999">0</text>
+<rect x="820" y="1275" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="876.0" y="1308" font-size="19" fill="#111">1</text>
+<rect x="932" y="1275" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1308" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1275" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1308" font-size="19" fill="#999">0</text>
+<text x="240" y="1361" font-size="19" text-anchor="end">Right EE</text>
+<rect x="260" y="1328" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="316.0" y="1361" font-size="19" fill="#999">0</text>
+<rect x="372" y="1328" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="428.0" y="1361" font-size="19" fill="#999">0</text>
+<rect x="484" y="1328" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="540.0" y="1361" font-size="19" fill="#111">1</text>
+<rect x="596" y="1328" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1361" font-size="19" fill="#111">1</text>
+<rect x="708" y="1328" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1361" font-size="19" fill="#999">0</text>
+<rect x="820" y="1328" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1361" font-size="19" fill="#999">0</text>
+<rect x="932" y="1328" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="988.0" y="1361" font-size="19" fill="#111">1</text>
+<rect x="1044" y="1328" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="1100.0" y="1361" font-size="19" fill="#999">0</text>
+<text x="240" y="1414" font-size="19" text-anchor="end">Dual EE</text>
+<rect x="260" y="1381" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="316.0" y="1414" font-size="19" fill="#111">1</text>
+<rect x="372" y="1381" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="428.0" y="1414" font-size="19" fill="#999">0</text>
+<rect x="484" y="1381" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="540.0" y="1414" font-size="19" fill="#999">0</text>
+<rect x="596" y="1381" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="652.0" y="1414" font-size="19" fill="#111">1</text>
+<rect x="708" y="1381" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="764.0" y="1414" font-size="19" fill="#999">0</text>
+<rect x="820" y="1381" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="876.0" y="1414" font-size="19" fill="#999">0</text>
+<rect x="932" y="1381" width="112" height="53" fill="#fff" stroke="#b8b8b8"/>
+<text x="988.0" y="1414" font-size="19" fill="#999">0</text>
+<rect x="1044" y="1381" width="112" height="53" fill="#9fc5e8" stroke="#b8b8b8"/>
+<text x="1100.0" y="1414" font-size="19" fill="#111">1</text>
+<path d="M708 1010V1434M260 1222H1156" stroke="#777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="700" y="1474" font-size="19">1 / filled = allowed · 0 / white = blocked · Padding masks omitted</text>
+<text x="700" y="1508" font-size="18">Each cell represents a token block. Self-attention within each token group is bidirectional.</text>
+<text x="700" y="1542" font-size="18">Prefix tokens mix information across views; the matrix shows direct access, not information isolation.</text>
+</g></svg>
