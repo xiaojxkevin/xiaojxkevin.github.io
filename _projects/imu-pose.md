@@ -2,7 +2,7 @@
 layout: project
 title: Active Inertial Sensing for Ego-Centric Motion Recovery
 date: 2026-03-17
-authors: Jinxi Xiao (also with Heng'an Zhou, Ran Ji and Boyang Xia)
+authors: Jinxi Xiao
 ---
 
 ## Overview
