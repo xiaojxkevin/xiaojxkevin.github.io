@@ -1,0 +1,15 @@
+# Opt-in build settings for a proxy listening on the Linux host's loopback address.
+# See README.md for the build command, including Bake's --allow=network.host.
+services:
+  jekyll:
+    build:
+      network: host
+      entitlements:
+        - network.host
+      args:
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - NO_PROXY
+        - http_proxy
+        - https_proxy
+        - no_proxy

@@ -14,6 +14,34 @@ docker compose up --build
 
 The site will be available at <http://localhost:4000> with live reload enabled.
 
+Keep this command running while editing. Changes to Markdown (including
+`_projects/`), layouts, data, and styles are mounted into the container and
+automatically rebuilt; the browser refreshes when the build finishes. There is
+no need to rebuild the Docker image for these edits.
+
+After changing `_config.yml`, restart the server with `docker compose restart
+jekyll`. Re-run `docker compose up --build` after changing the Dockerfile or gem
+dependencies.
+
+If you use a proxy listening on `127.0.0.1` on a Linux host, build with the
+optional proxy configuration:
+
+```bash
+export HTTP_PROXY=http://127.0.0.1:7897
+export HTTPS_PROXY="$HTTP_PROXY"
+docker compose -f docker-compose.yml -f .docker/compose.proxy.yml build --print \
+  | docker buildx bake --file - --allow=network.host
+docker compose up -d --no-build
+```
+
+The override forwards the
+shell's proxy variables as build arguments and enables host networking for build
+steps, so they can reach the local proxy. It also grants the required
+`network.host` build entitlement. The explicit Bake command grants that
+entitlement for this build (required by the current Compose/Bake integration).
+Proxy addresses are not stored in the Dockerfile. This override affects build
+steps; the running preview keeps its normal port mappings and live reload.
+
 ### Deployment
 
 Push to `main` branch — GitHub Pages will build and deploy automatically.
@@ -28,7 +56,15 @@ The site includes a browsable mirror of the [policy_readings](https://github.com
 
 ### Local preview after changes
 
-`docker compose up` (see [Local Development with Docker](#local-development-with-docker)) auto-runs the conversion script, so `_readings/` is regenerated on every edit — no manual step needed. After verifying locally, push to deploy as described in [Deployment](#deployment).
+`docker compose up` (see [Local Development with Docker](#local-development-with-docker)) runs the conversion script when the container starts. After editing `_readings_src/` or `scripts/sync_readings.rb`, regenerate the readings in the running container:
+
+```bash
+docker compose exec jekyll ruby scripts/sync_readings.rb
+```
+
+Jekyll then detects the generated file changes, rebuilds the site, and refreshes
+the browser. After verifying locally, push to deploy as described in
+[Deployment](#deployment).
 
 ### Updating the `policy_readings` submodule
 
@@ -36,7 +72,7 @@ When the source vault is updated upstream, sync the submodule and re-pin the poi
 
 ```bash
 git submodule update --remote _readings_src   # or: cd _readings_src && git pull
-docker compose up                             # verify locally
+docker compose restart jekyll                 # regenerate and preview if already running
 git add _readings_src                         # IMPORTANT: commit the new submodule commit
 git commit -m "update policy_readings submodule"
 git push origin main

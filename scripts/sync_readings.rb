@@ -18,6 +18,8 @@
 require "yaml"
 require "date"
 require "fileutils"
+require "cgi"
+require "strscan"
 
 ROOT = File.expand_path("..", __dir__)
 SRC = File.join(ROOT, "_readings_src")
@@ -111,6 +113,84 @@ def read_frontmatter(src_file)
   [fm, body]
 end
 
+def normalize_markdown_tables(body)
+  lines = body.lines
+  output = []
+  fence = nil
+  in_table = false
+
+  lines.each_with_index do |line, index|
+    if fence
+      output << line
+      fence = nil if line.match?(/\A {0,3}#{Regexp.escape(fence[0])}{#{fence.length},}[ \t]*\r?\n?\z/)
+      next
+    end
+
+    # Kramdown requires blank lines around tables; Obsidian accepts adjacent text.
+    # Leave fenced examples untouched so their literal Markdown stays intact.
+    if in_table && !line.lstrip.start_with?("|")
+      output << "\n" unless line.strip.empty?
+      in_table = false
+    end
+
+    if (match = line.match(/\A {0,3}(`{3,}|~{3,})/))
+      fence = match[1]
+    elsif line.lstrip.start_with?("|") &&
+          lines[index + 1]&.match?(/\A[ \t]*\|(?:[ \t]*:?-{3,}:?[ \t]*\|)+[ \t]*\r?\n?\z/)
+      output << "\n" unless output.empty? || output.last.strip.empty?
+      in_table = true
+    end
+
+    output << line
+  end
+
+  output.join
+end
+
+def math_span(tex, display: false)
+  # Raw span content bypasses Markdown emphasis, escaping, and smart quotes.
+  # Encode pipes as well, so formulas inside table cells stay in one cell.
+  escaped = CGI.escapeHTML(tex).gsub("|", "&#124;").gsub("\r", "&#13;").gsub("\n", "&#10;")
+  kind, opening, closing = display ? ["display", '\[', '\]'] : ["inline", '\(', '\)']
+  %(<span class="math-#{kind}" markdown="0">#{opening}#{escaped}#{closing}</span>)
+end
+
+def protect_math(body)
+  scanner = StringScanner.new(body)
+  output = +""
+
+  until scanner.eos?
+    # Keep fenced and inline code examples unchanged.
+    if scanner.bol? && (opening = scanner.scan(/ {0,3}(`{3,}|~{3,})[^\n]*(?:\n|\z)/))
+      fence = scanner[1]
+      output << opening
+      until scanner.eos?
+        line = scanner.scan(/[^\n]*(?:\n|\z)/)
+        output << line
+        break if line.match?(/\A {0,3}#{Regexp.escape(fence[0])}{#{fence.length},}[ \t]*\r?\n?\z/)
+      end
+    elsif (ticks = scanner.scan(/`+/))
+      output << ticks
+      closing = /(?<!`)#{Regexp.escape(ticks)}(?!`)/
+      output << scanner.scan_until(closing) if scanner.rest.match?(closing)
+    elsif (escaped = scanner.scan(/\\./m))
+      output << escaped
+    elsif scanner.peek(2) == "$$"
+      if scanner.scan(/\$\$((?:\\.|[^\\])*?)\$\$/m)
+        output << math_span(scanner[1], display: true)
+      else
+        output << scanner.getch
+      end
+    elsif scanner.scan(/\$((?:\\.|[^\\$\n])+)\$/)
+      output << math_span(scanner[1])
+    else
+      output << scanner.getch
+    end
+  end
+
+  output
+end
+
 def write_note(src_file, cat, slug, note_index)
   fm, body = read_frontmatter(src_file)
   fm["layout"] = "reading"
@@ -122,6 +202,8 @@ def write_note(src_file, cat, slug, note_index)
 
   body = rewrite_embeds(body, cat)
   body = rewrite_internal_links(body, note_index)
+  body = normalize_markdown_tables(body)
+  body = protect_math(body)
 
   out_path = File.join(DST, cat, "#{slug}.md")
   FileUtils.mkdir_p(File.dirname(out_path))
@@ -132,6 +214,13 @@ end
 
 def category_notes(cat, note_index)
   note_index.values.select { |m| m["category"] == cat && File.exist?(m["file"]) }
+end
+
+def arxiv_sort_key(row)
+  match = row["arxiv_number"].strip.match(/\A(\d{2})(0[1-9]|1[0-2])\.(\d{4,5})(?:v\d+)?\z/i)
+  return [0, -match[1].to_i, -match[2].to_i, -match[3].to_i, row["title"].to_s] if match
+
+  [1, -row["year"].to_i, 0, 0, row["title"].to_s]
 end
 
 def build_category_index(cat, note_index)
@@ -151,7 +240,7 @@ def build_category_index(cat, note_index)
       "slug" => meta["slug"],
     }
   end
-  rows = rows.sort_by { |r| [-r["year"].to_i, r["title"].to_s] }
+  rows = rows.sort_by { |r| arxiv_sort_key(r) }
 
   index_path = File.join(DST, cat, "index.md")
   FileUtils.mkdir_p(File.dirname(index_path))
@@ -241,4 +330,4 @@ def main
   puts "Generated #{note_index.length} notes + 4 category indexes + overview."
 end
 
-main
+main if $PROGRAM_NAME == __FILE__

@@ -2,7 +2,6 @@ services:
   jekyll:
     build:
       context: .
-      network: host
     ports:
       - "4000:4000"
       - "35729:35729" # LiveReload
@@ -10,4 +9,4 @@ services:
       - .:/srv/jekyll
     environment:
       - JEKYLL_ENV=development
-    command: bash -c "ruby scripts/sync_readings.rb && bundle exec jekyll serve --host 0.0.0.0 --watch --livereload --force_polling"
+    command: bash -c "ruby scripts/sync_readings.rb && exec bundle exec jekyll serve --host 0.0.0.0 --watch --livereload --force_polling"

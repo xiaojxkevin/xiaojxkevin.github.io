@@ -31,6 +31,9 @@
     <!-- MathJax for math rendering -->
     <script>
       MathJax = {
+        loader: {
+          paths: { mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5' }
+        },
         tex: {
           inlineMath: [['$', '$'], ['\\(', '\\)']],
           displayMath: [['$$', '$$'], ['\\[', '\\]']],
@@ -39,7 +42,7 @@
         svg: { fontCache: 'global' }
       };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="{{ '/assets/vendor/mathjax/tex-svg-3.2.2.js' | relative_url }}" defer></script>
 
     <!-- Syntax highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
