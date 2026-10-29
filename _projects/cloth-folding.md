@@ -3,6 +3,7 @@ layout: project
 title: 'Cloth Folding with $\pi_{0.5}$: DAgger and End-Effector Auxiliary Learning'
 description: 'A real-robot study of $\pi_{0.5}$ cloth folding on dual PiPER arms, examining corrective data and end-effector pose supervision.'
 authors: Ran Ji, Yikai Liu, Mingxi Li, Jinxi Xiao
+date: 2026-07-01
 ---
 
 ## Overview
@@ -63,7 +64,27 @@ The policy executes joint actions. During training, we additionally ask it to pr
 
 The model appends three EE token sequences alongside the joint-action sequence. Each sequence spans the action horizon and has its own input projection and output decoder, while learning through the shared action-expert network.
 
-Relative targets use translation and axis-angle rotation, giving six values per arm. Absolute targets use translation and a 6D rotation representation, giving nine values per arm and eighteen for both arms together.
+**The EE targets use different representations for relative motion and absolute pose.** The implementation was explicitly changed from a 9-value relative pose (6D rotation plus translation) to a 6-value relative pose (rotation vector plus translation), while retaining the 18-value dual-arm absolute target.
+
+| Target | Reference frame | Rotation representation | Values per horizon step |
+| :-- | :-- | :-- | :--: |
+| Left / right relative EE | That arm's current EE frame | 3-value axis-angle rotation vector | 6 per arm |
+| Dual-arm absolute EE | Each arm's own base frame | First two rotation-matrix columns, concatenated | 9 per arm, 18 together |
+
+For each arm, let the current measured joints give pose $(R_0,p_0)$ and the recorded action at horizon step $j$ give pose $(R_j,p_j)$ through forward kinematics. The relative target uses
+
+$$
+\begin{aligned}
+\Delta R_j &= R_0^{\top}R_j, \\
+\Delta p_j &= R_0^{\top}(p_j-p_0).
+\end{aligned}
+$$
+
+The encoded target places the three components of the rotation vector of $\Delta R_j$ before the three components of $\Delta p_j$, with angles in radians and translation in meters. Every step in the chunk is relative to the same current pose, rather than to the preceding action. This is a rigid-transform difference, not subtraction of Euler angles. Its reference frame is the current EE frame; assigning wrist-camera observations to the branch does not make it a camera-frame target.
+
+A useful interpretation of this choice is to pair local motion supervision with wrist observations: a small relative rotation has a small rotation vector, and no motion maps to the zero 6-vector. The previous 6D rotation encoding instead represents identity as $(1,0,0,0,1,0)$ before adding translation. Absolute orientations retain the [continuous 6D rotation representation](https://openaccess.thecvf.com/content_CVPR_2019/html/Zhou_On_the_Continuity_of_Rotation_Representations_in_Neural_Networks_CVPR_2019_paper.html), which avoids the global discontinuity of a 3-value rotation vector. These are design considerations rather than an experimentally isolated explanation of the success-rate difference; relative rotations near 180 degrees still encounter the rotation-vector ambiguity.
+
+The absolute target concatenates both arms' rotation encodings and translations in their respective base frames. The implementation does not apply camera extrinsics or transform the two arms into a calibrated common world frame. Its head-view conditioning therefore supplies an additional absolute-pose task without making the labels head-camera coordinates.
 
 <figure style="margin: 1.5em auto;">
   <img src="{{ '/assets/img/projects/cloth-folding/ee-architecture.svg' | relative_url }}" alt="Shared action expert with a joint-action branch and three view-conditioned end-effector auxiliary branches. Only joint actions are used for execution. An attention matrix shows which token groups can attend to each other." style="width: 100%;">
@@ -71,6 +92,20 @@ Relative targets use translation and axis-angle rotation, giving six values per 
 </figure>
 
 The attention mask makes the auxiliary role explicit. Joint-action tokens do not attend to EE tokens. Each EE sequence attends to its own suffix tokens, the text prefix, and its assigned camera's prefix tokens; it does not read the joint-action sequence or the other EE sequences. Since prefix representations are processed by the shared network, this restriction should not be interpreted as complete isolation of visual information across cameras.
+
+**Positional encoding also accounts for the parallel prediction branches.** Although the joint-action and three EE sequences are concatenated, each reuses the same base horizon positions rather than continuing the position count across all four sequences. For a sample with $N$ valid prefix tokens and horizon index $j$, the rotary positional encoding (RoPE) coordinates are
+
+$$
+\begin{aligned}
+p_{\mathrm{joint},j} &= N + j, \\
+p_{b,j} &= N + j + \delta_{b,j},
+\quad j = 0,\ldots,H-1.
+\end{aligned}
+$$
+
+Here $b$ denotes the left-relative, right-relative, or dual-absolute EE branch. Each EE branch has its own learnable vector of $H$ scalar offsets, initialized to zero and shared across samples. Thus all branches initially align corresponding horizon steps, while training can adjust the EE branches' positional relationships to the prefix and within each trajectory. The offsets change the RoPE rotations of attention queries and keys; they are not feature vectors added to the projected token embeddings, nor encodings of physical XYZ coordinates. They are also distinct from the flow-matching noise-time conditioning.
+
+The joint-action branch has no learned position offset in this configuration. The EE offsets are optimized through the auxiliary flow-matching losses, without an additional positional loss. Inference retains the ordinary joint-action horizon positions and does not require the EE branches or their offsets.
 
 All branches use flow-matching objectives. The weighted training objective is
 
@@ -81,7 +116,7 @@ $$
 + 0.01\,\mathcal{L}_{\mathrm{absolute\ EE}}.
 $$
 
-These coefficients weight losses with different target dimensions and scales; they are implementation settings, not independently validated optimal values. At inference, the policy generates joint actions without requiring the auxiliary EE predictions. The intended benefit is to shape shared representations through additional supervision during training.
+The EE targets explicitly bypass dataset normalization, preserving translation in meters and the chosen rotation coordinates. Each flow loss is an MSE averaged over its output dimensions, rather than a geodesic rotation loss or a consistency loss between predicted joint actions and their forward-kinematic poses. Representation and units therefore affect the training metric alongside the branch weights. These coefficients are implementation settings, not independently validated optimal values. At inference, the policy generates joint actions without requiring the auxiliary EE predictions. The intended benefit is to shape shared representations through additional supervision during training.
 
 ### Observed Effect
 
@@ -93,8 +128,6 @@ We compare models trained on 52 demonstration episodes and 15 DAgger episodes, w
 | $\pi_{0.5}$ with EE auxiliary supervision | 9/10 |
 
 We also observe fewer grasp retries and flatter folded garments with EE supervision. Retry counts and folding quality have not yet been evaluated quantitatively. With ten garments per model and varying initial conditions, the success counts are **preliminary evidence**, not a statistically established improvement.
-
-This comparison evaluates the auxiliary-learning approach as a whole. It does not isolate the effects of each EE target, loss weight, or data-filtering choice.
 
 ## Relation to Other $\pi_{0.5}$ Deployment Results
 
